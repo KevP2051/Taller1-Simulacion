@@ -187,6 +187,19 @@ Un número fijo de intervalos no sirve para todos los tamaños de secuencia del 
 Si la frecuencia esperada por intervalo es menor que 5, el sistema lo advierte junto al
 resultado de la prueba.
 
+### Rango de los intervalos
+
+Los k intervalos cubren siempre [0, 1) con ancho 1/k, y no el rango entre el mínimo y el
+máximo de los datos. La hipótesis es que los R_i son uniformes en [0, 1); si los
+intervalos se ajustaran al mínimo y al máximo observados, una secuencia concentrada en
+una parte del rango podría aprobar. Por ejemplo, 15 números repartidos de forma pareja
+entre 0.40 y 0.60 aprobarían con intervalos de 0.40 a 0.60, pero con intervalos en
+[0, 1) los intervalos de los extremos quedan vacíos y la prueba los rechaza
+correctamente.
+
+Un número igual a 1.0 (posible cuando m es par, pues R_i = X_i / (m − 1)) se cuenta en
+el último intervalo.
+
 ### Grados de libertad y valor crítico chi-cuadrado
 
 Los grados de libertad dependen de cada prueba, según gl = (Nc − 1)(Nf − 1), con

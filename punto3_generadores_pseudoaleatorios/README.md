@@ -20,8 +20,8 @@ sin copiar su código.
 ### Archivo de semillas
 
 Las semillas pueden ingresarse a mano en la ventana o cargarse desde un archivo `.csv`
-o `.txt` separado por comas. Cada fila corresponde a una secuencia; las columnas que no
-aplican a un método quedan vacías:
+o `.txt` separado por comas (o por punto y coma, como lo guarda Excel en español). Cada
+fila corresponde a una secuencia; las columnas que no aplican a un método quedan vacías:
 
 ```
 metodo,semilla,digitos,a,c,m,cantidad
@@ -30,7 +30,85 @@ congruencial_lineal,7,,1601,3701,10000,1000
 congruencial_multiplicativo,7,,129,,2147483647,1000
 ```
 
-_La descripción de cada función se documentará al implementar el módulo._
+### Ventana
+
+1. Se elige el método, se escriben la semilla y sus parámetros, y se pulsa **Generar**; o
+   se pulsa **Cargar archivo de semillas** para generar una secuencia por fila.
+2. Opcionalmente se marcan **Uniforme U(a, b)** (con sus límites) y **Normal estándar
+   N(0, 1)** antes de generar.
+3. Al elegir una secuencia en la lista se muestran su tabla, sus parámetros, la
+   verificación de Hull-Dobell y sus avisos. **Histograma** abre sus histogramas y
+   **Exportar CSV** guarda la tabla completa.
+4. Se marcan las pruebas, se revisa el número de intervalos k y se pulsa **Ejecutar
+   pruebas**: el resumen muestra una fila por secuencia y prueba, y cada prueba abre su
+   gráfico. Todo gráfico se guarda como imagen desde su barra de herramientas.
+
+### Uso como biblioteca
+
+```python
+from punto3_generadores_pseudoaleatorios import generadores, pruebas
+
+secuencia = generadores.generar_congruencial_lineal(7, 1601, 3701, 10000, 1000)
+numeros_uniformes = secuencia["numeros_r"]
+resultado = pruebas.prueba_chi_cuadrado(numeros_uniformes, 32)
+```
+
+## Funciones
+
+### generadores.py (rutinas de biblioteca)
+
+| Función | Parámetros | Retorno |
+|---|---|---|
+| `generar_cuadrados_medios` | `semilla`, `cantidad_de_digitos` (par), `cantidad_de_numeros` | secuencia |
+| `generar_congruencial_lineal` | `semilla`, `multiplicador_a`, `incremento_c`, `modulo_m`, `cantidad_de_numeros` | secuencia con verificación de Hull-Dobell |
+| `generar_congruencial_multiplicativo` | `semilla`, `multiplicador_a`, `modulo_m`, `cantidad_de_numeros` | secuencia |
+| `verificar_hull_dobell` | `multiplicador_a`, `incremento_c`, `modulo_m` | diccionario con las tres condiciones y `cumple` |
+| `transformar_a_uniforme` | `numeros_r`, `limite_inferior`, `limite_superior` | lista de N_i = a + (b − a)·R_i |
+| `transformar_a_normal_estandar` | `numeros_r` | diccionario con `numeros_normales` y `avisos` |
+| `normalizar_con_modulo` | `valor_x`, `modulo_m` | R_i según la paridad de m, truncado |
+| `truncar_a_cinco_decimales` | `valor` | valor truncado a cinco decimales |
+
+Una secuencia es un diccionario con `metodo`, `etiqueta`, `parametros`, `valores_x`
+(X_i), `numeros_r` (R_i), `periodo` (posición en que un congruencial vuelve a la
+semilla), `hull_dobell` y `avisos` (colapso a cero, ciclo, período o pares omitidos).
+
+### pruebas.py (rutinas de biblioteca)
+
+| Función | Parámetros | Retorno |
+|---|---|---|
+| `prueba_chi_cuadrado` | `numeros_r`, `cantidad_de_intervalos` | resultado con frecuencias observadas por intervalo y frecuencia esperada |
+| `prueba_de_poker` | `numeros_r` | resultado con frecuencias observadas y esperadas por mano |
+| `valor_critico_chi_cuadrado` | `probabilidad_acumulada`, `grados_de_libertad` | valor crítico chi-cuadrado truncado |
+| `probabilidad_acumulada_chi_cuadrado` | `valor_x`, `grados_de_libertad` | P(χ² ≤ x), mediante la función gamma incompleta regularizada |
+| `cantidad_de_intervalos_por_defecto` | `cantidad_de_numeros` | k = √n redondeado (mínimo 2) |
+
+Un resultado es un diccionario con `prueba`, `estadistico`, `valor_critico`, `pasa`,
+`avisos` y los datos de su gráfico.
+
+### inicializacion.py (rutina de inicialización)
+
+| Función | Parámetros | Retorno |
+|---|---|---|
+| `validar_fila_de_semilla` | diccionario con `metodo`, `semilla`, `digitos`, `a`, `c`, `m`, `cantidad` | (fila con enteros, lista de errores) |
+| `leer_archivo_de_semillas` | `ruta_del_archivo` (.csv o .txt, separado por comas o punto y coma) | (filas válidas, errores con número de fila) |
+
+### reportes.py (generador de reportes)
+
+| Función | Parámetros | Retorno |
+|---|---|---|
+| `crear_histograma_de_secuencia` | `secuencia` | figura con un histograma por distribución (R_i, U(a, b), normal) |
+| `crear_grafico_chi_cuadrado` | lista de resultados | figura de barras observadas vs esperadas, un panel por método |
+| `crear_grafico_de_poker` | lista de resultados | figura de manos observadas vs esperadas, un panel por método |
+| `exportar_secuencia_a_csv` | `secuencia`, `ruta_del_archivo` | archivo con las columnas i, X_i, R_i, N_i y Z_i |
+| `describir_secuencia` | `secuencia` | texto con parámetros, Hull-Dobell y avisos |
+
+Las figuras son objetos `matplotlib.figure.Figure`; fuera de la ventana se guardan con
+`figura.savefig("archivo.png")`.
+
+### programa_principal.py (programa principal)
+
+Construye la ventana y coordina la inicialización, las rutinas de biblioteca y el
+generador de reportes.
 
 ## Decisiones de diseño
 

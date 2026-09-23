@@ -117,7 +117,7 @@ Nf = 2 filas (frecuencias observadas y esperadas):
 | Prueba | Grados de libertad |
 |---|---|
 | Chi-cuadrado | k − 1 (con 8 intervalos: 7 gl, valor crítico 14.06714) |
-| Póker | 7 manos − 1 = 6 (valor crítico 12.59159) |
+| Póker | 7 manos − 1 = 6 (valor crítico 12.59158) |
 | Varianza | n − 1 |
 
 En póker, conocidas las cantidades de seis manos, la séptima queda determinada por el

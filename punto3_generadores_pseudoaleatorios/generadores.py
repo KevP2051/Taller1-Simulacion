@@ -38,7 +38,7 @@ def generar_cuadrados_medios(semilla, cantidad_de_digitos, cantidad_de_numeros):
         semilla_actual = siguiente_semilla
     return {
         "metodo": "cuadrados_medios",
-        "etiqueta": f"Cuadrados medios (semilla {semilla})",
+        "etiqueta": f"Cuadrados medios (X0 = {semilla}, {cantidad_de_digitos} dígitos)",
         "parametros": {"semilla": semilla, "digitos": cantidad_de_digitos, "cantidad": cantidad_de_numeros},
         "valores_x": valores_x,
         "numeros_r": numeros_r,
@@ -105,7 +105,7 @@ def generar_congruencial(metodo, etiqueta, semilla, multiplicador_a, incremento_
 def generar_congruencial_lineal(semilla, multiplicador_a, incremento_c, modulo_m, cantidad_de_numeros):
     secuencia = generar_congruencial(
         "congruencial_lineal",
-        f"Congruencial lineal (semilla {semilla})",
+        f"Congruencial lineal (X0 = {semilla}, a = {multiplicador_a}, c = {incremento_c}, m = {modulo_m})",
         semilla,
         multiplicador_a,
         incremento_c,
@@ -121,7 +121,7 @@ def generar_congruencial_lineal(semilla, multiplicador_a, incremento_c, modulo_m
 def generar_congruencial_multiplicativo(semilla, multiplicador_a, modulo_m, cantidad_de_numeros):
     secuencia = generar_congruencial(
         "congruencial_multiplicativo",
-        f"Congruencial multiplicativo (semilla {semilla})",
+        f"Congruencial multiplicativo (X0 = {semilla}, a = {multiplicador_a}, m = {modulo_m})",
         semilla,
         multiplicador_a,
         0,

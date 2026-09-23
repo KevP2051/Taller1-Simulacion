@@ -2,7 +2,7 @@ import tkinter as tk
 from itertools import islice
 from tkinter import filedialog, messagebox, ttk
 
-from punto3_generadores_pseudoaleatorios import generadores, inicializacion, reportes
+from punto3_generadores_pseudoaleatorios import generadores, inicializacion, pruebas, reportes
 
 NOMBRES_DE_METODOS = {
     "Cuadrados medios": "cuadrados_medios",
@@ -18,6 +18,10 @@ CAMPOS_DE_GENERACION = (
     ("cantidad", "Cantidad", "1000"),
 )
 MAXIMO_DE_FILAS_EN_TABLA = 1000
+PRUEBAS_DISPONIBLES = {
+    "Chi-cuadrado": lambda numeros_r, cantidad_de_intervalos: pruebas.prueba_chi_cuadrado(numeros_r, cantidad_de_intervalos),
+    "Póker": lambda numeros_r, cantidad_de_intervalos: pruebas.prueba_de_poker(numeros_r),
+}
 
 secuencias_generadas = []
 componentes = {}
@@ -75,6 +79,11 @@ def actualizar_lista_de_secuencias(indice_a_elegir=None):
     lista.delete(*lista.get_children())
     for indice, secuencia in enumerate(secuencias_generadas):
         lista.insert("", "end", iid=str(indice), values=(secuencia["etiqueta"], len(secuencia["numeros_r"]), len(secuencia["avisos"])))
+    secuencias_con_numeros = [secuencia for secuencia in secuencias_generadas if secuencia["numeros_r"]]
+    if secuencias_con_numeros:
+        cantidad_minima = min(len(secuencia["numeros_r"]) for secuencia in secuencias_con_numeros)
+        componentes["cantidad_de_intervalos"].delete(0, "end")
+        componentes["cantidad_de_intervalos"].insert(0, str(pruebas.cantidad_de_intervalos_por_defecto(cantidad_minima)))
     if indice_a_elegir is not None and secuencias_generadas:
         lista.selection_set(str(indice_a_elegir))
         lista.see(str(indice_a_elegir))
@@ -142,6 +151,44 @@ def quitar_secuencia_elegida():
         actualizar_lista_de_secuencias()
 
 
+def leer_cantidad_de_intervalos():
+    try:
+        cantidad_de_intervalos = int(componentes["cantidad_de_intervalos"].get())
+    except ValueError:
+        return None
+    return cantidad_de_intervalos if cantidad_de_intervalos >= 2 else None
+
+
+def ejecutar_pruebas_elegidas():
+    pruebas_elegidas = [nombre for nombre, elegida in componentes["pruebas_elegidas"].items() if elegida.get()]
+    secuencias_con_numeros = [secuencia for secuencia in secuencias_generadas if secuencia["numeros_r"]]
+    if not pruebas_elegidas or not secuencias_con_numeros:
+        messagebox.showinfo("Ejecutar pruebas", "Genere al menos una secuencia y marque al menos una prueba.")
+        return None
+    cantidad_de_intervalos = leer_cantidad_de_intervalos()
+    if cantidad_de_intervalos is None:
+        messagebox.showerror("Datos inválidos", "El número de intervalos k debe ser un entero mayor o igual a 2.")
+        return None
+    resumen = componentes["resumen"]
+    resumen.delete(*resumen.get_children())
+    resultados_por_prueba = {}
+    for nombre_de_la_prueba in pruebas_elegidas:
+        resultados_por_prueba[nombre_de_la_prueba] = []
+        for secuencia in secuencias_con_numeros:
+            resultado = PRUEBAS_DISPONIBLES[nombre_de_la_prueba](secuencia["numeros_r"], cantidad_de_intervalos)
+            resultado["etiqueta"] = secuencia["etiqueta"]
+            resultados_por_prueba[nombre_de_la_prueba].append(resultado)
+            resumen.insert("", "end", values=(
+                resultado["etiqueta"],
+                resultado["prueba"],
+                f"{resultado['estadistico']:.5f}",
+                f"{resultado['valor_critico']:.5f}",
+                "Pasa" if resultado["pasa"] else "No pasa",
+                " ".join(resultado["avisos"]),
+            ))
+    return resultados_por_prueba
+
+
 def crear_marco_de_generacion(ventana):
     marco = ttk.LabelFrame(ventana, text="Generación", padding=8)
     ttk.Label(marco, text="Método").grid(row=0, column=0, sticky="w")
@@ -203,14 +250,46 @@ def crear_marco_de_tabla(ventana):
     return marco
 
 
+def crear_marco_de_pruebas(ventana):
+    marco = ttk.LabelFrame(ventana, text="Pruebas de validación (α = 0.05)", padding=8)
+    opciones = ttk.Frame(marco)
+    opciones.pack(fill="x")
+    componentes["pruebas_elegidas"] = {}
+    for nombre_de_la_prueba in PRUEBAS_DISPONIBLES:
+        componentes["pruebas_elegidas"][nombre_de_la_prueba] = tk.BooleanVar(value=True)
+        ttk.Checkbutton(opciones, text=nombre_de_la_prueba, variable=componentes["pruebas_elegidas"][nombre_de_la_prueba]).pack(side="left", padx=(0, 8))
+    ttk.Label(opciones, text="Intervalos k").pack(side="left", padx=(16, 2))
+    componentes["cantidad_de_intervalos"] = ttk.Entry(opciones, width=8)
+    componentes["cantidad_de_intervalos"].pack(side="left")
+    ttk.Label(opciones, text="(por defecto √n de la secuencia más corta)").pack(side="left", padx=(4, 16))
+    componentes["boton_de_pruebas"] = ttk.Button(opciones, text="Ejecutar pruebas", command=ejecutar_pruebas_elegidas)
+    componentes["boton_de_pruebas"].pack(side="left")
+    columnas = (
+        ("secuencia", "Secuencia", 240),
+        ("prueba", "Prueba", 100),
+        ("estadistico", "Estadístico", 110),
+        ("valor_critico", "Valor crítico", 110),
+        ("resultado", "Resultado", 80),
+        ("avisos", "Avisos", 380),
+    )
+    resumen = ttk.Treeview(marco, columns=[columna for columna, _, _ in columnas], show="headings", height=6)
+    for columna, texto, ancho in columnas:
+        resumen.heading(columna, text=texto)
+        resumen.column(columna, width=ancho)
+    resumen.pack(fill="both", expand=True, pady=(6, 0))
+    componentes["resumen"] = resumen
+    return marco
+
+
 def crear_ventana_principal():
     ventana = tk.Tk()
     ventana.title("Generadores y validadores de números pseudoaleatorios")
-    ventana.geometry("1150x760")
+    ventana.geometry("1150x900")
     componentes["ventana"] = ventana
     crear_marco_de_generacion(ventana).grid(row=0, column=0, columnspan=2, sticky="ew", padx=8, pady=4)
     crear_marco_de_secuencias(ventana).grid(row=1, column=0, sticky="nsew", padx=8, pady=4)
     crear_marco_de_tabla(ventana).grid(row=1, column=1, sticky="nsew", padx=8, pady=4)
+    crear_marco_de_pruebas(ventana).grid(row=2, column=0, columnspan=2, sticky="nsew", padx=8, pady=4)
     ventana.columnconfigure(0, weight=1)
     ventana.columnconfigure(1, weight=1)
     ventana.rowconfigure(1, weight=1)

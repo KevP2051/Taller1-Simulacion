@@ -1,8 +1,10 @@
 import math
+from statistics import NormalDist
 
 from punto3_generadores_pseudoaleatorios.generadores import truncar_a_cinco_decimales
 
 NIVEL_DE_SIGNIFICANCIA = 0.05
+VALOR_Z = truncar_a_cinco_decimales(NormalDist().inv_cdf(1 - NIVEL_DE_SIGNIFICANCIA / 2))
 PROBABILIDADES_DE_POKER = {
     "Todos diferentes": 0.3024,
     "Un par": 0.5040,
@@ -81,12 +83,120 @@ def calcular_estadistico_chi_cuadrado(frecuencias_observadas, frecuencias_espera
     )
 
 
-def prueba_chi_cuadrado(numeros_r, cantidad_de_intervalos):
-    cantidad_de_numeros = len(numeros_r)
+def contar_frecuencias_por_intervalo(numeros_r, cantidad_de_intervalos):
     frecuencias_observadas = [0] * cantidad_de_intervalos
     for numero_r in numeros_r:
         indice_del_intervalo = round(numero_r * 100000) * cantidad_de_intervalos // 100000
         frecuencias_observadas[min(indice_del_intervalo, cantidad_de_intervalos - 1)] += 1
+    return frecuencias_observadas
+
+
+def obtener_limites_de_intervalos(cantidad_de_intervalos):
+    return [
+        (truncar_a_cinco_decimales(indice / cantidad_de_intervalos), truncar_a_cinco_decimales((indice + 1) / cantidad_de_intervalos))
+        for indice in range(cantidad_de_intervalos)
+    ]
+
+
+def prueba_de_medias(numeros_r):
+    cantidad_de_numeros = len(numeros_r)
+    media = truncar_a_cinco_decimales(sum(numeros_r) / cantidad_de_numeros)
+    margen_de_aceptacion = VALOR_Z * math.sqrt(1 / 12) / math.sqrt(cantidad_de_numeros)
+    limite_inferior = truncar_a_cinco_decimales(0.5 - margen_de_aceptacion)
+    limite_superior = truncar_a_cinco_decimales(0.5 + margen_de_aceptacion)
+    return {
+        "prueba": "Medias",
+        "estadistico": media,
+        "valor_critico": VALOR_Z,
+        "pasa": limite_inferior <= media <= limite_superior,
+        "avisos": [],
+        "limite_inferior": limite_inferior,
+        "limite_superior": limite_superior,
+        "valor_esperado": 0.5,
+    }
+
+
+def prueba_de_varianza(numeros_r):
+    cantidad_de_numeros = len(numeros_r)
+    grados_de_libertad = cantidad_de_numeros - 1
+    media = sum(numeros_r) / cantidad_de_numeros
+    varianza = truncar_a_cinco_decimales(sum((numero_r - media) ** 2 for numero_r in numeros_r) / grados_de_libertad)
+    chi_cuadrado_inferior = valor_critico_chi_cuadrado(NIVEL_DE_SIGNIFICANCIA / 2, grados_de_libertad)
+    chi_cuadrado_superior = valor_critico_chi_cuadrado(1 - NIVEL_DE_SIGNIFICANCIA / 2, grados_de_libertad)
+    limite_inferior = truncar_a_cinco_decimales(chi_cuadrado_inferior / (12 * grados_de_libertad))
+    limite_superior = truncar_a_cinco_decimales(chi_cuadrado_superior / (12 * grados_de_libertad))
+    return {
+        "prueba": "Varianza",
+        "estadistico": varianza,
+        "valor_critico": chi_cuadrado_superior,
+        "pasa": limite_inferior <= varianza <= limite_superior,
+        "avisos": [],
+        "chi_cuadrado_inferior": chi_cuadrado_inferior,
+        "chi_cuadrado_superior": chi_cuadrado_superior,
+        "limite_inferior": limite_inferior,
+        "limite_superior": limite_superior,
+        "valor_esperado": truncar_a_cinco_decimales(1 / 12),
+    }
+
+
+def valor_critico_kolmogorov_smirnov(cantidad_de_numeros):
+    raiz_de_n = math.sqrt(cantidad_de_numeros)
+    if cantidad_de_numeros <= 50:
+        coeficiente_de_la_tabla = math.sqrt(-math.log(NIVEL_DE_SIGNIFICANCIA / 2) / 2)
+        return truncar_a_cinco_decimales(coeficiente_de_la_tabla / (raiz_de_n + 0.12 + 0.11 / raiz_de_n))
+    return truncar_a_cinco_decimales(1.36 / raiz_de_n)
+
+
+def prueba_kolmogorov_smirnov(numeros_r, cantidad_de_intervalos):
+    cantidad_de_numeros = len(numeros_r)
+    frecuencias_observadas = contar_frecuencias_por_intervalo(numeros_r, cantidad_de_intervalos)
+    frecuencias_obtenidas_acumuladas = []
+    frecuencia_acumulada = 0
+    for frecuencia_observada in frecuencias_observadas:
+        frecuencia_acumulada += frecuencia_observada
+        frecuencias_obtenidas_acumuladas.append(frecuencia_acumulada)
+    s_x = [truncar_a_cinco_decimales(acumulada / cantidad_de_numeros) for acumulada in frecuencias_obtenidas_acumuladas]
+    f_x = [truncar_a_cinco_decimales((indice + 1) / cantidad_de_intervalos) for indice in range(cantidad_de_intervalos)]
+    diferencias = [truncar_a_cinco_decimales(abs(esperada - obtenida)) for esperada, obtenida in zip(f_x, s_x)]
+    diferencia_maxima = max(diferencias)
+    diferencia_maxima_permitida = valor_critico_kolmogorov_smirnov(cantidad_de_numeros)
+    return {
+        "prueba": "Kolmogorov-Smirnov",
+        "estadistico": diferencia_maxima,
+        "valor_critico": diferencia_maxima_permitida,
+        "pasa": diferencia_maxima < diferencia_maxima_permitida,
+        "avisos": [],
+        "intervalos": obtener_limites_de_intervalos(cantidad_de_intervalos),
+        "frecuencias_observadas": frecuencias_observadas,
+        "s_x": s_x,
+        "f_x": f_x,
+        "diferencias": diferencias,
+    }
+
+
+def prueba_de_rachas(numeros_r):
+    cantidad_de_numeros = len(numeros_r)
+    signos = ["+" if actual > anterior else "-" for anterior, actual in zip(numeros_r, numeros_r[1:])]
+    rachas_observadas = 1 + sum(1 for signo_anterior, signo_actual in zip(signos, signos[1:]) if signo_actual != signo_anterior)
+    rachas_esperadas = (2 * cantidad_de_numeros - 1) / 3
+    desviacion_de_rachas = math.sqrt((16 * cantidad_de_numeros - 29) / 90)
+    estadistico_z = truncar_a_cinco_decimales((rachas_observadas - rachas_esperadas) / desviacion_de_rachas)
+    return {
+        "prueba": "Rachas",
+        "estadistico": estadistico_z,
+        "valor_critico": VALOR_Z,
+        "pasa": -VALOR_Z <= estadistico_z <= VALOR_Z,
+        "avisos": [],
+        "rachas_observadas": rachas_observadas,
+        "rachas_esperadas": truncar_a_cinco_decimales(rachas_esperadas),
+        "limite_inferior": truncar_a_cinco_decimales(rachas_esperadas - VALOR_Z * desviacion_de_rachas),
+        "limite_superior": truncar_a_cinco_decimales(rachas_esperadas + VALOR_Z * desviacion_de_rachas),
+    }
+
+
+def prueba_chi_cuadrado(numeros_r, cantidad_de_intervalos):
+    cantidad_de_numeros = len(numeros_r)
+    frecuencias_observadas = contar_frecuencias_por_intervalo(numeros_r, cantidad_de_intervalos)
     frecuencia_esperada = truncar_a_cinco_decimales(cantidad_de_numeros / cantidad_de_intervalos)
     estadistico = calcular_estadistico_chi_cuadrado(frecuencias_observadas, [cantidad_de_numeros / cantidad_de_intervalos] * cantidad_de_intervalos)
     valor_critico = valor_critico_chi_cuadrado(1 - NIVEL_DE_SIGNIFICANCIA, cantidad_de_intervalos - 1)
@@ -99,10 +209,7 @@ def prueba_chi_cuadrado(numeros_r, cantidad_de_intervalos):
         "valor_critico": valor_critico,
         "pasa": estadistico < valor_critico,
         "avisos": avisos,
-        "intervalos": [
-            (truncar_a_cinco_decimales(indice / cantidad_de_intervalos), truncar_a_cinco_decimales((indice + 1) / cantidad_de_intervalos))
-            for indice in range(cantidad_de_intervalos)
-        ],
+        "intervalos": obtener_limites_de_intervalos(cantidad_de_intervalos),
         "frecuencias_observadas": frecuencias_observadas,
         "frecuencia_esperada": frecuencia_esperada,
     }

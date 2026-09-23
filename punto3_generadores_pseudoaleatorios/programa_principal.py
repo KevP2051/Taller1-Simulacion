@@ -21,12 +21,20 @@ CAMPOS_DE_GENERACION = (
 )
 MAXIMO_DE_FILAS_EN_TABLA = 1000
 GRAFICOS_DE_PRUEBAS = {
+    "Medias": reportes.crear_grafico_de_medias,
+    "Varianza": reportes.crear_grafico_de_varianzas,
     "Chi-cuadrado": reportes.crear_grafico_chi_cuadrado,
+    "Kolmogorov-Smirnov": reportes.crear_grafico_kolmogorov_smirnov,
     "Póker": reportes.crear_grafico_de_poker,
+    "Rachas": reportes.crear_grafico_de_rachas,
 }
 PRUEBAS_DISPONIBLES = {
+    "Medias": lambda numeros_r, cantidad_de_intervalos: pruebas.prueba_de_medias(numeros_r),
+    "Varianza": lambda numeros_r, cantidad_de_intervalos: pruebas.prueba_de_varianza(numeros_r),
     "Chi-cuadrado": lambda numeros_r, cantidad_de_intervalos: pruebas.prueba_chi_cuadrado(numeros_r, cantidad_de_intervalos),
+    "Kolmogorov-Smirnov": lambda numeros_r, cantidad_de_intervalos: pruebas.prueba_kolmogorov_smirnov(numeros_r, cantidad_de_intervalos),
     "Póker": lambda numeros_r, cantidad_de_intervalos: pruebas.prueba_de_poker(numeros_r),
+    "Rachas": lambda numeros_r, cantidad_de_intervalos: pruebas.prueba_de_rachas(numeros_r),
 }
 
 secuencias_generadas = []
@@ -216,9 +224,9 @@ def leer_cantidad_de_intervalos():
 
 def ejecutar_pruebas_elegidas():
     pruebas_elegidas = [nombre for nombre, elegida in componentes["pruebas_elegidas"].items() if elegida.get()]
-    secuencias_con_numeros = [secuencia for secuencia in secuencias_generadas if secuencia["numeros_r"]]
+    secuencias_con_numeros = [secuencia for secuencia in secuencias_generadas if len(secuencia["numeros_r"]) >= 2]
     if not pruebas_elegidas or not secuencias_con_numeros:
-        messagebox.showinfo("Ejecutar pruebas", "Genere al menos una secuencia y marque al menos una prueba.")
+        messagebox.showinfo("Ejecutar pruebas", "Genere al menos una secuencia de dos o más números y marque al menos una prueba.")
         return None
     cantidad_de_intervalos = leer_cantidad_de_intervalos()
     if cantidad_de_intervalos is None:
@@ -237,7 +245,7 @@ def ejecutar_pruebas_elegidas():
                 resultado["etiqueta"],
                 resultado["prueba"],
                 f"{resultado['estadistico']:.5f}",
-                f"{resultado['valor_critico']:.5f}",
+                reportes.describir_criterio(resultado),
                 "Pasa" if resultado["pasa"] else "No pasa",
                 " ".join(resultado["avisos"]),
             ))
@@ -325,7 +333,7 @@ def crear_marco_de_pruebas(ventana):
         ("secuencia", "Secuencia", 240),
         ("prueba", "Prueba", 100),
         ("estadistico", "Estadístico", 110),
-        ("valor_critico", "Valor crítico", 110),
+        ("criterio", "Valor crítico o intervalo", 170),
         ("resultado", "Resultado", 80),
         ("avisos", "Avisos", 380),
     )

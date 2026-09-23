@@ -135,6 +135,30 @@ def generar_desde_campos():
     actualizar_lista_de_secuencias(len(secuencias_generadas) - 1)
 
 
+def cargar_archivo_de_semillas():
+    ruta_del_archivo = filedialog.askopenfilename(
+        title="Cargar archivo de semillas",
+        filetypes=[("Archivo de semillas", "*.csv *.txt")],
+    )
+    if not ruta_del_archivo:
+        return
+    limites_de_uniforme, errores_de_uniforme = leer_opciones_de_transformacion()
+    if errores_de_uniforme:
+        messagebox.showerror("Datos inválidos", "\n".join(errores_de_uniforme))
+        return
+    filas_validas, errores = inicializacion.leer_archivo_de_semillas(ruta_del_archivo)
+    secuencias_cargadas = [agregar_secuencia(fila, limites_de_uniforme, componentes["incluir_normal"].get()) for fila in filas_validas]
+    if secuencias_cargadas:
+        actualizar_lista_de_secuencias(len(secuencias_generadas) - 1)
+    lineas = [f"Secuencias generadas desde el archivo: {len(secuencias_cargadas)}"]
+    lineas.extend(f"- {secuencia['etiqueta']}" for secuencia in secuencias_cargadas)
+    if errores:
+        lineas.append("")
+        lineas.append("Filas con errores:")
+        lineas.extend(errores)
+    messagebox.showinfo("Cargar archivo de semillas", "\n".join(lineas))
+
+
 def exportar_secuencia_elegida():
     indice_elegido = obtener_indice_elegido()
     if indice_elegido is None:
@@ -249,6 +273,7 @@ def crear_marco_de_generacion(ventana):
     componentes["marco_de_botones_de_generacion"] = ttk.Frame(marco)
     componentes["marco_de_botones_de_generacion"].grid(row=3, column=0, columnspan=12, sticky="w", pady=(6, 0))
     ttk.Button(componentes["marco_de_botones_de_generacion"], text="Generar", command=generar_desde_campos).pack(side="left")
+    ttk.Button(componentes["marco_de_botones_de_generacion"], text="Cargar archivo de semillas", command=cargar_archivo_de_semillas).pack(side="left", padx=4)
     return marco
 
 

@@ -1,3 +1,6 @@
+import csv
+from pathlib import Path
+
 CAMPOS_POR_METODO = {
     "cuadrados_medios": ("semilla", "digitos", "cantidad"),
     "congruencial_lineal": ("semilla", "a", "c", "m", "cantidad"),
@@ -47,3 +50,25 @@ def validar_fila_de_semilla(fila):
     if errores:
         return None, errores
     return fila_convertida, []
+
+
+def leer_archivo_de_semillas(ruta_del_archivo):
+    ruta = Path(ruta_del_archivo)
+    if ruta.suffix.lower() not in (".csv", ".txt"):
+        return [], ["El archivo de semillas debe tener extensión .csv o .txt."]
+    try:
+        lineas = ruta.read_text(encoding="utf-8-sig").splitlines()
+    except (OSError, UnicodeDecodeError) as error:
+        return [], [f"No se pudo leer el archivo: {error}"]
+    if len(lineas) < 2:
+        return [], ["El archivo no tiene filas de semillas debajo del encabezado."]
+    separador = ";" if ";" in lineas[0] and "," not in lineas[0] else ","
+    filas_validas = []
+    errores = []
+    for numero_de_fila, fila in enumerate(csv.DictReader(lineas, delimiter=separador), start=2):
+        fila_convertida, errores_de_la_fila = validar_fila_de_semilla(fila)
+        if errores_de_la_fila:
+            errores.append(f"Fila {numero_de_fila}: " + " ".join(errores_de_la_fila))
+        else:
+            filas_validas.append(fila_convertida)
+    return filas_validas, errores

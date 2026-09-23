@@ -2,6 +2,8 @@ import tkinter as tk
 from itertools import islice
 from tkinter import filedialog, messagebox, ttk
 
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+
 from punto3_generadores_pseudoaleatorios import generadores, inicializacion, pruebas, reportes
 
 NOMBRES_DE_METODOS = {
@@ -18,6 +20,10 @@ CAMPOS_DE_GENERACION = (
     ("cantidad", "Cantidad", "1000"),
 )
 MAXIMO_DE_FILAS_EN_TABLA = 1000
+GRAFICOS_DE_PRUEBAS = {
+    "Chi-cuadrado": reportes.crear_grafico_chi_cuadrado,
+    "Póker": reportes.crear_grafico_de_poker,
+}
 PRUEBAS_DISPONIBLES = {
     "Chi-cuadrado": lambda numeros_r, cantidad_de_intervalos: pruebas.prueba_chi_cuadrado(numeros_r, cantidad_de_intervalos),
     "Póker": lambda numeros_r, cantidad_de_intervalos: pruebas.prueba_de_poker(numeros_r),
@@ -151,6 +157,31 @@ def quitar_secuencia_elegida():
         actualizar_lista_de_secuencias()
 
 
+def mostrar_figura_en_ventana(figura, titulo):
+    ventana_del_grafico = tk.Toplevel(componentes["ventana"])
+    ventana_del_grafico.title(titulo)
+    lienzo = FigureCanvasTkAgg(figura, master=ventana_del_grafico)
+    NavigationToolbar2Tk(lienzo, ventana_del_grafico)
+    lienzo.get_tk_widget().pack(fill="both", expand=True)
+    lienzo.draw()
+
+
+def mostrar_histograma_elegido():
+    indice_elegido = obtener_indice_elegido()
+    if indice_elegido is None:
+        messagebox.showinfo("Histograma", "Elija una secuencia de la lista.")
+        return
+    secuencia = secuencias_generadas[indice_elegido]
+    mostrar_figura_en_ventana(reportes.crear_histograma_de_secuencia(secuencia), f"Histograma: {secuencia['etiqueta']}")
+
+
+def ejecutar_y_graficar_pruebas():
+    resultados_por_prueba = ejecutar_pruebas_elegidas()
+    if resultados_por_prueba:
+        for nombre_de_la_prueba, resultados in resultados_por_prueba.items():
+            mostrar_figura_en_ventana(GRAFICOS_DE_PRUEBAS[nombre_de_la_prueba](resultados), f"Prueba {nombre_de_la_prueba}")
+
+
 def leer_cantidad_de_intervalos():
     try:
         cantidad_de_intervalos = int(componentes["cantidad_de_intervalos"].get())
@@ -232,8 +263,9 @@ def crear_marco_de_secuencias(ventana):
     componentes["lista_de_secuencias"] = lista
     componentes["marco_de_botones_de_secuencias"] = ttk.Frame(marco)
     componentes["marco_de_botones_de_secuencias"].pack(fill="x", pady=(6, 0))
-    ttk.Button(componentes["marco_de_botones_de_secuencias"], text="Exportar CSV", command=exportar_secuencia_elegida).pack(side="left")
-    ttk.Button(componentes["marco_de_botones_de_secuencias"], text="Quitar", command=quitar_secuencia_elegida).pack(side="left", padx=4)
+    ttk.Button(componentes["marco_de_botones_de_secuencias"], text="Histograma", command=mostrar_histograma_elegido).pack(side="left")
+    ttk.Button(componentes["marco_de_botones_de_secuencias"], text="Exportar CSV", command=exportar_secuencia_elegida).pack(side="left", padx=4)
+    ttk.Button(componentes["marco_de_botones_de_secuencias"], text="Quitar", command=quitar_secuencia_elegida).pack(side="left")
     componentes["detalle"] = tk.StringVar()
     ttk.Label(marco, textvariable=componentes["detalle"], wraplength=420, justify="left").pack(fill="x", pady=(6, 0))
     return marco
@@ -262,7 +294,7 @@ def crear_marco_de_pruebas(ventana):
     componentes["cantidad_de_intervalos"] = ttk.Entry(opciones, width=8)
     componentes["cantidad_de_intervalos"].pack(side="left")
     ttk.Label(opciones, text="(por defecto √n de la secuencia más corta)").pack(side="left", padx=(4, 16))
-    componentes["boton_de_pruebas"] = ttk.Button(opciones, text="Ejecutar pruebas", command=ejecutar_pruebas_elegidas)
+    componentes["boton_de_pruebas"] = ttk.Button(opciones, text="Ejecutar pruebas", command=ejecutar_y_graficar_pruebas)
     componentes["boton_de_pruebas"].pack(side="left")
     columnas = (
         ("secuencia", "Secuencia", 240),

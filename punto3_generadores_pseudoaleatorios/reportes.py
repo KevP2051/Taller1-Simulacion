@@ -1,6 +1,10 @@
 import csv
 from itertools import zip_longest
 
+from matplotlib.figure import Figure
+
+from punto3_generadores_pseudoaleatorios.pruebas import cantidad_de_intervalos_por_defecto
+
 
 def formatear_valor(valor):
     if isinstance(valor, float):
@@ -57,3 +61,78 @@ def exportar_secuencia_a_csv(secuencia, ruta_del_archivo):
         escritor = csv.writer(archivo)
         escritor.writerow(encabezados)
         escritor.writerows(filas)
+
+
+def crear_figura_con_paneles(cantidad_de_paneles, titulo):
+    figura = Figure(figsize=(max(6, 5 * cantidad_de_paneles), 4.5), layout="constrained")
+    figura.suptitle(titulo)
+    return figura, figura.subplots(1, cantidad_de_paneles, squeeze=False)[0]
+
+
+def crear_histograma_de_secuencia(secuencia):
+    distribuciones = [("R_i en [0, 1]", secuencia["numeros_r"], (0, 1))]
+    if "numeros_uniformes" in secuencia:
+        limite_inferior, limite_superior = secuencia["limites_de_uniforme"]
+        distribuciones.append(
+            (f"N_i uniforme U({limite_inferior:g}, {limite_superior:g})", secuencia["numeros_uniformes"], (limite_inferior, limite_superior))
+        )
+    if "numeros_normales" in secuencia:
+        distribuciones.append(("Z_i normal estándar N(0, 1)", secuencia["numeros_normales"], None))
+    figura, paneles = crear_figura_con_paneles(len(distribuciones), f"Histograma de frecuencias: {secuencia['etiqueta']}")
+    for panel, (nombre_de_la_distribucion, valores, rango) in zip(paneles, distribuciones):
+        panel.hist(valores, bins=cantidad_de_intervalos_por_defecto(len(valores)), range=rango, edgecolor="black")
+        panel.set_title(nombre_de_la_distribucion)
+        panel.set_xlabel("Valor")
+        panel.set_ylabel("Frecuencia")
+    return figura
+
+
+def describir_resultado(resultado):
+    decision = "pasa" if resultado["pasa"] else "no pasa"
+    etiqueta_en_dos_lineas = resultado["etiqueta"].replace(" (", "\n(", 1)
+    return (
+        f"{etiqueta_en_dos_lineas}\n"
+        f"Estadístico = {resultado['estadistico']:.5f}, valor crítico = {resultado['valor_critico']:.5f}: {decision}"
+    )
+
+
+def dibujar_barras_observadas_contra_esperadas(panel, nombres_de_las_barras, frecuencias_observadas, frecuencias_esperadas):
+    posiciones = range(len(nombres_de_las_barras))
+    ancho_de_barra = 0.4
+    panel.bar([posicion - ancho_de_barra / 2 for posicion in posiciones], frecuencias_observadas, ancho_de_barra, label="Observadas")
+    panel.bar([posicion + ancho_de_barra / 2 for posicion in posiciones], frecuencias_esperadas, ancho_de_barra, label="Esperadas")
+    panel.set_xticks(list(posiciones), nombres_de_las_barras)
+    panel.set_ylabel("Frecuencia")
+    panel.legend(loc="upper right", fontsize=8)
+
+
+def crear_grafico_chi_cuadrado(resultados):
+    figura, paneles = crear_figura_con_paneles(len(resultados), "Prueba chi-cuadrado: frecuencias observadas vs esperadas")
+    for panel, resultado in zip(paneles, resultados):
+        cantidad_de_intervalos = len(resultado["frecuencias_observadas"])
+        dibujar_barras_observadas_contra_esperadas(
+            panel,
+            [str(numero) for numero in range(1, cantidad_de_intervalos + 1)],
+            resultado["frecuencias_observadas"],
+            [resultado["frecuencia_esperada"]] * cantidad_de_intervalos,
+        )
+        if cantidad_de_intervalos > 20:
+            panel.set_xticks([])
+        panel.set_xlabel(f"Intervalo (k = {cantidad_de_intervalos})")
+        panel.set_title(describir_resultado(resultado), fontsize=9)
+    return figura
+
+
+def crear_grafico_de_poker(resultados):
+    figura, paneles = crear_figura_con_paneles(len(resultados), "Prueba de póker: manos observadas vs esperadas")
+    for panel, resultado in zip(paneles, resultados):
+        dibujar_barras_observadas_contra_esperadas(
+            panel,
+            resultado["categorias"],
+            resultado["frecuencias_observadas"],
+            resultado["frecuencias_esperadas"],
+        )
+        panel.tick_params(axis="x", labelrotation=45)
+        panel.set_xlabel("Mano")
+        panel.set_title(describir_resultado(resultado), fontsize=9)
+    return figura

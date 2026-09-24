@@ -37,11 +37,13 @@ congruencial_multiplicativo,7,,129,,2147483647,1000
 2. Opcionalmente se marcan **Uniforme U(a, b)** (con sus límites) y **Normal estándar
    N(0, 1)** antes de generar.
 3. Al elegir una secuencia en la lista se muestran su tabla, sus parámetros, la
-   verificación de Hull-Dobell y sus avisos. **Histograma** abre sus histogramas y
-   **Exportar CSV** guarda la tabla completa.
+   verificación de Hull-Dobell y sus avisos. **Histograma** muestra sus histogramas en el
+   área de gráficos y **Exportar CSV** guarda la tabla completa.
 4. Se marcan las pruebas, se revisa el número de intervalos k y se pulsa **Ejecutar
-   pruebas**: el resumen muestra una fila por secuencia y prueba, y cada prueba abre su
-   gráfico. Todo gráfico se guarda como imagen desde su barra de herramientas.
+   pruebas**: el resumen muestra una fila por secuencia y prueba, y a su derecha aparece
+   el área de gráficos. La lista **Ver gráfico** permite elegir el histograma o el gráfico
+   de cada prueba; al seleccionar una fila del resumen se muestra el gráfico de esa
+   prueba. Todo gráfico se guarda como imagen desde su barra de herramientas.
 
 ### Uso como biblioteca
 

@@ -38,6 +38,7 @@ PRUEBAS_DISPONIBLES = {
 }
 
 secuencias_generadas = []
+figuras_disponibles = {}
 componentes = {}
 
 
@@ -189,13 +190,25 @@ def quitar_secuencia_elegida():
         actualizar_lista_de_secuencias()
 
 
-def mostrar_figura_en_ventana(figura, titulo):
-    ventana_del_grafico = tk.Toplevel(componentes["ventana"])
-    ventana_del_grafico.title(titulo)
-    lienzo = FigureCanvasTkAgg(figura, master=ventana_del_grafico)
-    NavigationToolbar2Tk(lienzo, ventana_del_grafico)
+def mostrar_grafico_elegido(evento=None):
+    area_de_grafico = componentes["area_de_grafico"]
+    for elemento in area_de_grafico.winfo_children():
+        elemento.destroy()
+    nombre_del_grafico = componentes["grafico_elegido"].get()
+    if nombre_del_grafico not in figuras_disponibles:
+        return
+    lienzo = FigureCanvasTkAgg(figuras_disponibles[nombre_del_grafico], master=area_de_grafico)
+    barra_de_herramientas = NavigationToolbar2Tk(lienzo, area_de_grafico, pack_toolbar=False)
+    barra_de_herramientas.pack(side="bottom", fill="x")
     lienzo.get_tk_widget().pack(fill="both", expand=True)
     lienzo.draw()
+
+
+def publicar_graficos(figuras_nuevas, nombre_a_mostrar):
+    figuras_disponibles.update(figuras_nuevas)
+    componentes["grafico_elegido"]["values"] = list(figuras_disponibles)
+    componentes["grafico_elegido"].set(nombre_a_mostrar)
+    mostrar_grafico_elegido()
 
 
 def mostrar_histograma_elegido():
@@ -203,15 +216,30 @@ def mostrar_histograma_elegido():
     if indice_elegido is None:
         messagebox.showinfo("Histograma", "Elija una secuencia de la lista.")
         return
-    secuencia = secuencias_generadas[indice_elegido]
-    mostrar_figura_en_ventana(reportes.crear_histograma_de_secuencia(secuencia), f"Histograma: {secuencia['etiqueta']}")
+    publicar_graficos({"Histograma": reportes.crear_histograma_de_secuencia(secuencias_generadas[indice_elegido])}, "Histograma")
 
 
 def ejecutar_y_graficar_pruebas():
     resultados_por_prueba = ejecutar_pruebas_elegidas()
     if resultados_por_prueba:
-        for nombre_de_la_prueba, resultados in resultados_por_prueba.items():
-            mostrar_figura_en_ventana(GRAFICOS_DE_PRUEBAS[nombre_de_la_prueba](resultados), f"Prueba {nombre_de_la_prueba}")
+        histograma = figuras_disponibles.get("Histograma")
+        figuras_disponibles.clear()
+        if histograma is not None:
+            figuras_disponibles["Histograma"] = histograma
+        figuras_de_pruebas = {
+            nombre_de_la_prueba: GRAFICOS_DE_PRUEBAS[nombre_de_la_prueba](resultados)
+            for nombre_de_la_prueba, resultados in resultados_por_prueba.items()
+        }
+        publicar_graficos(figuras_de_pruebas, next(iter(figuras_de_pruebas)))
+
+
+def mostrar_grafico_de_la_fila_elegida(evento=None):
+    seleccion = componentes["resumen"].selection()
+    if seleccion:
+        nombre_de_la_prueba = componentes["resumen"].item(seleccion[0])["values"][1]
+        if nombre_de_la_prueba in figuras_disponibles and nombre_de_la_prueba != componentes["grafico_elegido"].get():
+            componentes["grafico_elegido"].set(nombre_de_la_prueba)
+            mostrar_grafico_elegido()
 
 
 def leer_cantidad_de_intervalos():
@@ -287,7 +315,7 @@ def crear_marco_de_generacion(ventana):
 
 def crear_marco_de_secuencias(ventana):
     marco = ttk.LabelFrame(ventana, text="Secuencias generadas", padding=8)
-    lista = ttk.Treeview(marco, columns=("secuencia", "numeros", "avisos"), show="headings", selectmode="browse", height=8)
+    lista = ttk.Treeview(marco, columns=("secuencia", "numeros", "avisos"), show="headings", selectmode="browse", height=4)
     for columna, texto, ancho in (("secuencia", "Secuencia", 260), ("numeros", "Números", 80), ("avisos", "Avisos", 60)):
         lista.heading(columna, text=texto)
         lista.column(columna, width=ancho)
@@ -300,7 +328,7 @@ def crear_marco_de_secuencias(ventana):
     ttk.Button(componentes["marco_de_botones_de_secuencias"], text="Exportar CSV", command=exportar_secuencia_elegida).pack(side="left", padx=4)
     ttk.Button(componentes["marco_de_botones_de_secuencias"], text="Quitar", command=quitar_secuencia_elegida).pack(side="left")
     componentes["detalle"] = tk.StringVar()
-    ttk.Label(marco, textvariable=componentes["detalle"], wraplength=420, justify="left").pack(fill="x", pady=(6, 0))
+    ttk.Label(marco, textvariable=componentes["detalle"], wraplength=900, justify="left").pack(fill="x", pady=(6, 0))
     return marco
 
 
@@ -329,27 +357,43 @@ def crear_marco_de_pruebas(ventana):
     ttk.Label(opciones, text="(por defecto √n de la secuencia más corta)").pack(side="left", padx=(4, 16))
     componentes["boton_de_pruebas"] = ttk.Button(opciones, text="Ejecutar pruebas", command=ejecutar_y_graficar_pruebas)
     componentes["boton_de_pruebas"].pack(side="left")
+    panel_dividido = ttk.PanedWindow(marco, orient="horizontal")
+    panel_dividido.pack(fill="both", expand=True, pady=(6, 0))
+    marco_del_resumen = ttk.Frame(panel_dividido)
     columnas = (
-        ("secuencia", "Secuencia", 240),
-        ("prueba", "Prueba", 100),
-        ("estadistico", "Estadístico", 110),
-        ("criterio", "Valor crítico o intervalo", 170),
-        ("resultado", "Resultado", 80),
-        ("avisos", "Avisos", 380),
+        ("secuencia", "Secuencia", 220),
+        ("prueba", "Prueba", 110),
+        ("estadistico", "Estadístico", 90),
+        ("criterio", "Valor crítico o intervalo", 150),
+        ("resultado", "Resultado", 70),
+        ("avisos", "Avisos", 200),
     )
-    resumen = ttk.Treeview(marco, columns=[columna for columna, _, _ in columnas], show="headings", height=6)
+    resumen = ttk.Treeview(marco_del_resumen, columns=[columna for columna, _, _ in columnas], show="headings", selectmode="browse")
     for columna, texto, ancho in columnas:
         resumen.heading(columna, text=texto)
         resumen.column(columna, width=ancho)
-    resumen.pack(fill="both", expand=True, pady=(6, 0))
+    resumen.bind("<<TreeviewSelect>>", mostrar_grafico_de_la_fila_elegida)
+    resumen.pack(fill="both", expand=True)
     componentes["resumen"] = resumen
+    marco_del_grafico = ttk.Frame(panel_dividido)
+    seleccion_de_grafico = ttk.Frame(marco_del_grafico)
+    seleccion_de_grafico.pack(fill="x")
+    ttk.Label(seleccion_de_grafico, text="Ver gráfico").pack(side="left", padx=(0, 4))
+    componentes["grafico_elegido"] = ttk.Combobox(seleccion_de_grafico, state="readonly", width=24)
+    componentes["grafico_elegido"].bind("<<ComboboxSelected>>", mostrar_grafico_elegido)
+    componentes["grafico_elegido"].pack(side="left")
+    componentes["area_de_grafico"] = ttk.Frame(marco_del_grafico)
+    componentes["area_de_grafico"].pack(fill="both", expand=True, pady=(4, 0))
+    panel_dividido.add(marco_del_resumen, weight=2)
+    panel_dividido.add(marco_del_grafico, weight=3)
     return marco
 
 
 def crear_ventana_principal():
     ventana = tk.Tk()
     ventana.title("Generadores y validadores de números pseudoaleatorios")
-    ventana.geometry("1150x900")
+    ventana.geometry("1400x950")
+    ventana.state("zoomed")
     componentes["ventana"] = ventana
     crear_marco_de_generacion(ventana).grid(row=0, column=0, columnspan=2, sticky="ew", padx=8, pady=4)
     crear_marco_de_secuencias(ventana).grid(row=1, column=0, sticky="nsew", padx=8, pady=4)
@@ -358,6 +402,7 @@ def crear_ventana_principal():
     ventana.columnconfigure(0, weight=1)
     ventana.columnconfigure(1, weight=1)
     ventana.rowconfigure(1, weight=1)
+    ventana.rowconfigure(2, weight=2)
     actualizar_campos_habilitados()
     return ventana
 

@@ -1,0 +1,4 @@
+metodo,semilla,digitos,a,c,m,cantidad
+cuadrados_medios,5735,4,,,,1000
+congruencial_lineal,7,,1601,3701,10000,1000
+congruencial_multiplicativo,7,,129,,2147483647,1000

@@ -13,42 +13,38 @@ from punto3_generadores_pseudoaleatorios import inicializacion
 
 PASOS = 1_000_000
 REPLICAS = 100
-SEMILLA_BASE = 12345           
-SALTO_ENTRE_SEMILLAS = 104729  
+SEMILLA_BASE = 12345   
+SEMILLAS = []          
 
 CARPETA_RESULTADOS = Path(__file__).parent / "resultados"
 ARCHIVO_SEMILLAS = Path(__file__).parent / "semillas_caminata.csv"
-ARCHIVO_CONTADOR = Path(__file__).parent / "contador_semillas.txt"
 
+# Dimensión -> función que simula una réplica
 FUNCIONES = {1: caminata.caminata_1d, 2: caminata.caminata_2d, 3: caminata.caminata_3d}
 
 
-def semilla_nueva(filas):
-    """Semilla generada con el congruencial multiplicativo del punto 3."""
-    contador = 0
-    if ARCHIVO_CONTADOR.exists():
-        contador = int(ARCHIVO_CONTADOR.read_text().strip() or 0)
-    contador += 1
-    ARCHIVO_CONTADOR.write_text(str(contador))
-    base = filas[0]["semilla"] if filas else 12345
-    secuencia = caminata.generadores.generar_congruencial_multiplicativo(
-        base, caminata.MULTIPLICADOR, caminata.MODULO, contador
-    )
-    return secuencia["valores_x"][-1]   
-
-
-def elegir_semilla():
-    filas, errores = inicializacion.leer_archivo_de_semillas(ARCHIVO_SEMILLAS)
-    for error in errores:
-        print("Aviso en el archivo de semillas:", error)
-    print("Semillas disponibles:")
-    for numero, fila in enumerate(filas, start=1):
-        print(f"  {numero}. {fila['semilla']}")
-    print("  0. Semilla nueva (generada con el congruencial del punto 3)")
-    opcion = input("Elija una opción: ").strip()
-    if opcion.isdigit() and 1 <= int(opcion) <= len(filas):
-        return filas[int(opcion) - 1]["semilla"]
-    return semilla_nueva(filas)
+def elegir_semillas():
+    """Menú de 2 opciones: las 100 semillas del CSV o una semilla tomada del reloj (time)."""
+    while True:
+        print("Origen de las semillas:")
+        print(f"  1. Las {REPLICAS} semillas del archivo semillas_caminata.csv")
+        print("  2. Semilla generada con la librería time (las réplicas se encadenan a partir de ella)")
+        opcion = input("Elija una opción (1 o 2): ").strip()
+        if opcion == "1":
+            filas, errores = inicializacion.leer_archivo_de_semillas(ARCHIVO_SEMILLAS)
+            for error in errores:
+                print("Aviso en el archivo de semillas:", error)
+            if len(filas) < REPLICAS:
+                print(f"El archivo tiene {len(filas)} semillas válidas y se necesitan {REPLICAS}.")
+                continue
+            # Solo se usa la columna semilla de las primeras REPLICAS filas
+            return [fila["semilla"] for fila in filas[:REPLICAS]]
+        if opcion == "2":
+            # Semilla base del reloj, reducida al rango [1, m - 1]
+            base = time.time_ns() % (caminata.MODULO - 1) + 1
+            print(f"Semilla por tiempo: {base}. Encadenando las {REPLICAS} semillas (unos segundos)...")
+            return caminata.encadenar_semillas(base, REPLICAS, PASOS)
+        print("Opción no válida.")
 
 
 def ejecutar_replicas(dimension):
@@ -57,28 +53,31 @@ def ejecutar_replicas(dimension):
     retornos = 0
     inicio = time.perf_counter()
     for i in range(REPLICAS):
-        semilla = SEMILLA_BASE + i * SALTO_ENTRE_SEMILLAS
-        posicion, retorno = funcion(semilla, PASOS)
+        # Cada réplica usa su propia semilla
+        posicion, retorno = funcion(SEMILLAS[i], PASOS)
         posiciones_finales.append(posicion)
         if retorno:
             retornos += 1
         print(f"  {dimension}D réplica {i + 1}/{REPLICAS}", end="\r")
     tiempo = time.perf_counter() - inicio
     print()
+    # Posiciones finales, probabilidad estimada de retorno y tiempo en segundos
     return posiciones_finales, retornos / REPLICAS, tiempo
 
 
 def medir_memoria(dimension):
+    # Pico de memoria (MB) de una sola réplica
     tracemalloc.start()
     FUNCIONES[dimension](SEMILLA_BASE, PASOS)
     _, pico = tracemalloc.get_traced_memory()
     tracemalloc.stop()
-    return pico / 1024 / 1024  
+    return pico / 1024 / 1024
 
 
 def graficar_histograma_1d(posiciones):
     valores = [p[0] for p in posiciones]
     media = sum(valores) / len(valores)
+    # Desviación muestral (n - 1) y proporción dentro de ±1σ, para compararlas con la teoría
     desviacion = math.sqrt(sum((v - media) ** 2 for v in valores) / (len(valores) - 1))
     dentro = sum(1 for v in valores if abs(v) <= math.sqrt(PASOS)) / len(valores)
     print(f"1D -> media = {media:.2f} (teórica 0), desviación = {desviacion:.2f} (teórica {math.sqrt(PASOS):.0f})")
@@ -86,6 +85,7 @@ def graficar_histograma_1d(posiciones):
 
     plt.figure(figsize=(8, 5))
     plt.hist(valores, bins=15, density=True, edgecolor="black", label="Posiciones finales")
+    # Densidad teórica N(0, n) entre -4σ y 4σ
     sigma = math.sqrt(PASOS)
     xs = [-4 * sigma + i * (8 * sigma) / 200 for i in range(201)]
     ys = [math.exp(-x * x / (2 * PASOS)) / math.sqrt(2 * math.pi * PASOS) for x in xs]
@@ -98,7 +98,24 @@ def graficar_histograma_1d(posiciones):
     plt.close()
 
 
+def graficar_trayectoria_1d():
+    # Trayectoria corta (10.000 pasos) con la semilla base
+    lista_x, _, _ = caminata.trayectoria(1, SEMILLA_BASE, 10000)
+    plt.figure(figsize=(9, 4.5))
+    plt.plot(range(len(lista_x)), lista_x, linewidth=0.6)
+    plt.axhline(0, color="gray", linestyle="--", linewidth=0.8)
+    plt.scatter([0], [0], color="green", zorder=3, label="Origen")
+    plt.scatter([len(lista_x) - 1], [lista_x[-1]], color="red", zorder=3, label="Final")
+    plt.title("Caminata 1D (10.000 pasos)")
+    plt.xlabel("Paso")
+    plt.ylabel("Posición de la rana")
+    plt.legend()
+    plt.savefig(CARPETA_RESULTADOS / "trayectoria_1d.png", dpi=150, bbox_inches="tight")
+    plt.close()
+
+
 def graficar_2d(posiciones):
+    # Figura 1: trayectoria de 10.000 pasos
     lista_x, lista_y, _ = caminata.trayectoria(2, SEMILLA_BASE, 10000)
     plt.figure(figsize=(6, 6))
     plt.plot(lista_x, lista_y, linewidth=0.5)
@@ -109,6 +126,7 @@ def graficar_2d(posiciones):
     plt.savefig(CARPETA_RESULTADOS / "trayectoria_2d.png", dpi=150, bbox_inches="tight")
     plt.close()
 
+    # Figura 2: dispersión de las posiciones finales
     plt.figure(figsize=(6, 6))
     plt.scatter([p[0] for p in posiciones], [p[1] for p in posiciones], s=15)
     plt.title(f"Posiciones finales 2D ({REPLICAS} réplicas)")
@@ -135,16 +153,22 @@ def graficar_3d():
 
 
 def main():
-    global SEMILLA_BASE
-    SEMILLA_BASE = elegir_semilla()
+    global SEMILLAS, SEMILLA_BASE
+    SEMILLAS = elegir_semillas()
+    SEMILLA_BASE = SEMILLAS[0]
     CARPETA_RESULTADOS.mkdir(exist_ok=True)
     print(f"Semilla base: {SEMILLA_BASE}")
-    (CARPETA_RESULTADOS / "semilla_usada.txt").write_text(f"Semilla base: {SEMILLA_BASE}\n")
+    # Se guardan las semillas para poder reproducir la corrida
+    (CARPETA_RESULTADOS / "semilla_usada.txt").write_text(
+        f"Semilla base: {SEMILLA_BASE}\nSemillas de las réplicas:\n" + "\n".join(str(s) for s in SEMILLAS) + "\n"
+    )
 
+    # Probabilidad exacta de retorno 1D: debe dar 0.5, 0.0 y 0.375
     print("Probabilidad exacta de retorno (1D):")
     for n in (2, 3, 4):
         print(f"  P(S_{n} = 0) = {caminata.probabilidad_exacta_retorno(n)}")
 
+    # Filas del cuadro de eficiencia: (dimensión, tiempo, memoria, probabilidad de retorno)
     tabla = []
     for dimension in (1, 2, 3):
         print(f"\nSimulando {dimension}D...")
@@ -153,6 +177,7 @@ def main():
         tabla.append((dimension, tiempo, memoria, prob_retorno))
         if dimension == 1:
             graficar_histograma_1d(posiciones)
+            graficar_trayectoria_1d()
         elif dimension == 2:
             graficar_2d(posiciones)
         else:

@@ -2,8 +2,9 @@
 
 Biblioteca en Python, implementada desde cero, con generadores de números
 pseudoaleatorios (cuadrados medios, congruenciales, uniforme y normal) y pruebas
-estadísticas de validación (medias, varianza, chi-cuadrado, Kolmogorov-Smirnov,
-póker y rachas). Es la fuente de aleatoriedad de los puntos 2 (caminata aleatoria)
+estadísticas de validación (medias, varianza, chi-cuadrado, Kolmogorov-Smirnov
+y póker). Por indicación del docente no se implementan la prueba de rachas ni el
+generador congruencial aditivo. Es la fuente de aleatoriedad de los puntos 2 (caminata aleatoria)
 y 4 (EpiSim) del taller.
 
 ## Uso
@@ -83,8 +84,7 @@ semilla), `hull_dobell` y `avisos` (colapso a cero, ciclo, período o pares omit
 | `prueba_chi_cuadrado` | `numeros_r`, `cantidad_de_intervalos` | resultado con frecuencias observadas por intervalo y frecuencia esperada |
 | `prueba_kolmogorov_smirnov` | `numeros_r`, `cantidad_de_intervalos` | resultado con S(x), F(x), diferencias, DMAX y DMAXP |
 | `prueba_de_poker` | `numeros_r` | resultado con frecuencias observadas y esperadas por mano |
-| `prueba_de_rachas` | `numeros_r` | resultado con rachas observadas, esperadas, estadístico Z e intervalo de rachas |
-| `valor_critico_kolmogorov_smirnov` | `cantidad_de_numeros` | DMAXP según la tabla de Kolmogorov-Smirnov (α = 0.05) |
+| `valor_critico_kolmogorov_smirnov` | `cantidad_de_numeros` | DMAXP de la tabla de Kolmogorov-Smirnov (α = 0.05): valor tabulado si n ≤ 50, 1.36/√n si n > 50 |
 | `valor_critico_chi_cuadrado` | `probabilidad_acumulada`, `grados_de_libertad` | valor crítico chi-cuadrado truncado |
 | `probabilidad_acumulada_chi_cuadrado` | `valor_x`, `grados_de_libertad` | P(χ² ≤ x), mediante la función gamma incompleta regularizada |
 | `cantidad_de_intervalos_por_defecto` | `cantidad_de_numeros` | k = √n redondeado (mínimo 2) |
@@ -108,7 +108,6 @@ Un resultado es un diccionario con `prueba`, `estadistico`, `valor_critico`, `pa
 | `crear_grafico_de_varianzas` | lista de resultados | figura con la varianza de cada método, su intervalo de aceptación y la varianza teórica |
 | `crear_grafico_chi_cuadrado` | lista de resultados | figura de barras observadas vs esperadas, un panel por método |
 | `crear_grafico_kolmogorov_smirnov` | lista de resultados | figura de S(x) empírica vs F(x) = x con DMAX resaltado, un panel por método |
-| `crear_grafico_de_rachas` | lista de resultados | figura de rachas observadas vs esperadas con su intervalo, un panel por método |
 | `crear_grafico_de_poker` | lista de resultados | figura de manos observadas vs esperadas, un panel por método |
 | `exportar_secuencia_a_csv` | `secuencia`, `ruta_del_archivo` | archivo con las columnas i, X_i, R_i, N_i y Z_i |
 | `describir_secuencia` | `secuencia` | texto con parámetros, Hull-Dobell y avisos |
@@ -159,7 +158,7 @@ distribución normal; los puntos 2 y 4 solo utilizan la uniforme.
 
 ### Secuencias que se validan
 
-Las seis pruebas se aplican a las secuencias R_i en [0, 1), cuyas propiedades esperadas
+Las cinco pruebas se aplican a las secuencias R_i en [0, 1), cuyas propiedades esperadas
 son:
 
 - Media: E[R_i] = 0.5
@@ -189,16 +188,12 @@ Todas las pruebas trabajan con α = 0.05 (95 % de aceptación).
 | Chi-cuadrado | Σ(O − E)²/E | estadístico < χ²(0.95, k − 1) |
 | Kolmogorov-Smirnov | DMAX | DMAX < DMAXP |
 | Póker | Σ(O − E)²/E | estadístico < χ²(0.95, 6) |
-| Rachas | Z = (rachas − (2n − 1)/3)/√((16n − 29)/90) | −Z_c ≤ Z ≤ Z_c |
 
 Z_c = 1.95996 es el valor exacto de la normal estándar para 0.975, obtenido con
 `statistics.NormalDist().inv_cdf(0.975)` y truncado a cinco decimales. En la prueba de
 varianza, χ²(0.025, 49) = 31.5549 y χ²(0.975, 49) = 70.2224 corresponden a
 `CHISQ.INV.RT(0.975; 49)` y `CHISQ.INV.RT(0.025; 49)` de Excel; para n = 50 dan
 LI = 0.05366 y LS = 0.11942.
-
-En la prueba de rachas, cada R_i se compara con el anterior: "+" si es mayor y "−" si es
-menor o igual; cada cambio de signo inicia una racha nueva.
 
 ### Número de intervalos (chi-cuadrado y Kolmogorov-Smirnov)
 
@@ -249,6 +244,23 @@ Como los grados de libertad cambian con k y con n, el valor crítico chi-cuadrad
 calcula para cualquier número de grados de libertad en lugar de tomarse de una tabla
 impresa, cuyos valores reproduce.
 
+### Prueba de póker
+
+Cada R_i se toma con sus cinco decimales como una mano de cinco dígitos y se clasifica
+en uno de los siete patrones:
+
+| Patrón | Símbolo | Descripción | Ejemplo | Probabilidad |
+|---|---|---|---|---|
+| Todos distintos | D | Los 5 dígitos son diferentes | 12345 | 0.3024 |
+| Un par | O | Un dígito aparece 2 veces | 11234 | 0.5040 |
+| Dos pares | T | Dos dígitos aparecen 2 veces | 11223 | 0.1080 |
+| Tercia | K | Un dígito aparece 3 veces | 11123 | 0.0720 |
+| Full | F | Un dígito 3 veces + otro 2 | 11122 | 0.0090 |
+| Cuatro | P | Un dígito aparece 4 veces | 11112 | 0.0045 |
+| Cinco | Q | Un dígito aparece 5 veces | 11111 | 0.0001 |
+
+La frecuencia esperada de cada patrón es n · probabilidad.
+
 ### Prueba de Kolmogorov-Smirnov
 
 La prueba se aplica sobre los k intervalos:
@@ -258,9 +270,8 @@ La prueba se aplica sobre los k intervalos:
 3. Frecuencia esperada acumulada: n / k sumada intervalo a intervalo.
 4. F(x) = frecuencia esperada acumulada / n.
 5. Dif = |F(x) − S(x)| por intervalo; DMAX es la mayor diferencia.
-6. DMAXP, el error máximo permitido, sigue la tabla de Kolmogorov-Smirnov con α = 0.05:
-   - n ≤ 50: DMAXP = c / (√n + 0.12 + 0.11/√n), con c = √(−ln(α/2) / 2) = 1.35810.
-     Esta expresión reproduce los valores de la tabla (para n = 50, DMAXP = 0.18845).
-   - n > 50: DMAXP = 1.36 / √n, fórmula para n grande indicada por la tabla
-     (para n = 1000, DMAXP = 0.04300).
+6. DMAXP, el error máximo permitido, se toma de la tabla de Kolmogorov-Smirnov indicada
+   por el docente (columna α = 0.05), con n la cantidad de números de la secuencia:
+   - n ≤ 50: valor tabulado (por ejemplo, n = 20 → 0.29408 y n = 50 → 0.18841).
+   - n > 50: DMAXP = 1.36 / √n (por ejemplo, n = 1000 → 0.04300).
 7. La secuencia pasa la prueba si DMAX < DMAXP.

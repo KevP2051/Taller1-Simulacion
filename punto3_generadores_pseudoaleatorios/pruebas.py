@@ -5,23 +5,32 @@ from punto3_generadores_pseudoaleatorios.generadores import truncar_a_cinco_deci
 
 NIVEL_DE_SIGNIFICANCIA = 0.05
 VALOR_Z = truncar_a_cinco_decimales(NormalDist().inv_cdf(1 - NIVEL_DE_SIGNIFICANCIA / 2))
+# Los siete patrones de la prueba de póker (nombre y símbolo según la tabla del docente)
 PROBABILIDADES_DE_POKER = {
-    "Todos diferentes": 0.3024,
-    "Un par": 0.5040,
-    "Dos pares": 0.1080,
-    "Tercia": 0.0720,
-    "Full": 0.0090,
-    "Póker": 0.0045,
-    "Quintilla": 0.0001,
+    "Todos distintos (D)": 0.3024,
+    "Un par (O)": 0.5040,
+    "Dos pares (T)": 0.1080,
+    "Tercia (K)": 0.0720,
+    "Full (F)": 0.0090,
+    "Cuatro (P)": 0.0045,
+    "Cinco (Q)": 0.0001,
 }
+# DMAXP de la tabla de Kolmogorov-Smirnov con α = 0.05 para n = 1, ..., 50; para n > 50 la tabla indica 1.36/√n
+TABLA_KOLMOGOROV_SMIRNOV = (
+    0.97500, 0.84189, 0.70760, 0.62394, 0.56328, 0.51926, 0.48342, 0.45427, 0.43001, 0.40925,
+    0.39122, 0.37543, 0.36143, 0.34890, 0.33750, 0.32733, 0.31796, 0.30936, 0.30143, 0.29408,
+    0.28724, 0.28087, 0.27490, 0.26931, 0.26404, 0.25908, 0.25438, 0.24993, 0.24571, 0.24170,
+    0.23788, 0.23424, 0.23076, 0.22743, 0.22425, 0.22119, 0.21826, 0.21544, 0.21273, 0.21012,
+    0.20760, 0.20517, 0.20283, 0.20056, 0.19837, 0.19625, 0.19420, 0.19221, 0.19028, 0.18841,
+)
 CATEGORIA_POR_REPETICIONES = {
-    (1, 1, 1, 1, 1): "Todos diferentes",
-    (2, 1, 1, 1): "Un par",
-    (2, 2, 1): "Dos pares",
-    (3, 1, 1): "Tercia",
-    (3, 2): "Full",
-    (4, 1): "Póker",
-    (5,): "Quintilla",
+    (1, 1, 1, 1, 1): "Todos distintos (D)",
+    (2, 1, 1, 1): "Un par (O)",
+    (2, 2, 1): "Dos pares (T)",
+    (3, 1, 1): "Tercia (K)",
+    (3, 2): "Full (F)",
+    (4, 1): "Cuatro (P)",
+    (5,): "Cinco (Q)",
 }
 
 
@@ -140,11 +149,9 @@ def prueba_de_varianza(numeros_r):
 
 
 def valor_critico_kolmogorov_smirnov(cantidad_de_numeros):
-    raiz_de_n = math.sqrt(cantidad_de_numeros)
-    if cantidad_de_numeros <= 50:
-        coeficiente_de_la_tabla = math.sqrt(-math.log(NIVEL_DE_SIGNIFICANCIA / 2) / 2)
-        return truncar_a_cinco_decimales(coeficiente_de_la_tabla / (raiz_de_n + 0.12 + 0.11 / raiz_de_n))
-    return truncar_a_cinco_decimales(1.36 / raiz_de_n)
+    if cantidad_de_numeros <= len(TABLA_KOLMOGOROV_SMIRNOV):
+        return TABLA_KOLMOGOROV_SMIRNOV[cantidad_de_numeros - 1]
+    return truncar_a_cinco_decimales(1.36 / math.sqrt(cantidad_de_numeros))
 
 
 def prueba_kolmogorov_smirnov(numeros_r, cantidad_de_intervalos):
@@ -171,26 +178,6 @@ def prueba_kolmogorov_smirnov(numeros_r, cantidad_de_intervalos):
         "s_x": s_x,
         "f_x": f_x,
         "diferencias": diferencias,
-    }
-
-
-def prueba_de_rachas(numeros_r):
-    cantidad_de_numeros = len(numeros_r)
-    signos = ["+" if actual > anterior else "-" for anterior, actual in zip(numeros_r, numeros_r[1:])]
-    rachas_observadas = 1 + sum(1 for signo_anterior, signo_actual in zip(signos, signos[1:]) if signo_actual != signo_anterior)
-    rachas_esperadas = (2 * cantidad_de_numeros - 1) / 3
-    desviacion_de_rachas = math.sqrt((16 * cantidad_de_numeros - 29) / 90)
-    estadistico_z = truncar_a_cinco_decimales((rachas_observadas - rachas_esperadas) / desviacion_de_rachas)
-    return {
-        "prueba": "Rachas",
-        "estadistico": estadistico_z,
-        "valor_critico": VALOR_Z,
-        "pasa": -VALOR_Z <= estadistico_z <= VALOR_Z,
-        "avisos": [],
-        "rachas_observadas": rachas_observadas,
-        "rachas_esperadas": truncar_a_cinco_decimales(rachas_esperadas),
-        "limite_inferior": truncar_a_cinco_decimales(rachas_esperadas - VALOR_Z * desviacion_de_rachas),
-        "limite_superior": truncar_a_cinco_decimales(rachas_esperadas + VALOR_Z * desviacion_de_rachas),
     }
 
 

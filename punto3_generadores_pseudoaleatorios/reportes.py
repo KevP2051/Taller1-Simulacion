@@ -90,8 +90,6 @@ def crear_histograma_de_secuencia(secuencia):
 def describir_criterio(resultado):
     if resultado["prueba"] in ("Medias", "Varianza"):
         return f"[{resultado['limite_inferior']:.5f}, {resultado['limite_superior']:.5f}]"
-    if resultado["prueba"] == "Rachas":
-        return f"±{resultado['valor_critico']:.5f}"
     return f"{resultado['valor_critico']:.5f}"
 
 
@@ -159,27 +157,6 @@ def crear_grafico_kolmogorov_smirnov(resultados):
         panel.vlines(posicion_x, min(valores_en_x), max(valores_en_x), color="tab:red", linewidth=3, label=f"DMAX = {resultado['estadistico']:.5f}")
         panel.set_xlabel("x")
         panel.set_ylabel("Probabilidad acumulada")
-        panel.legend(fontsize=8, loc="upper left")
-        panel.set_title(describir_resultado(resultado), fontsize=9)
-    return figura
-
-
-def crear_grafico_de_rachas(resultados):
-    figura, paneles = crear_figura_con_paneles(len(resultados), "Prueba de rachas: rachas observadas vs esperadas")
-    for panel, resultado in zip(paneles, resultados):
-        rachas_esperadas = resultado["rachas_esperadas"]
-        panel.bar([0], [resultado["rachas_observadas"]], 0.5, label="Observadas")
-        panel.bar(
-            [1],
-            [rachas_esperadas],
-            0.5,
-            yerr=[[rachas_esperadas - resultado["limite_inferior"]], [resultado["limite_superior"] - rachas_esperadas]],
-            capsize=12,
-            label=f"Esperadas con intervalo [{resultado['limite_inferior']:.5f}, {resultado['limite_superior']:.5f}]",
-        )
-        panel.set_xticks([0, 1], ["Observadas", "Esperadas"])
-        panel.set_ylabel("Cantidad de rachas")
-        panel.set_ylim(0, 1.3 * max(resultado["rachas_observadas"], resultado["limite_superior"]))
         panel.legend(fontsize=8, loc="upper left")
         panel.set_title(describir_resultado(resultado), fontsize=9)
     return figura

@@ -26,7 +26,6 @@ GRAFICOS_DE_PRUEBAS = {
     "Chi-cuadrado": reportes.crear_grafico_chi_cuadrado,
     "Kolmogorov-Smirnov": reportes.crear_grafico_kolmogorov_smirnov,
     "Póker": reportes.crear_grafico_de_poker,
-    "Rachas": reportes.crear_grafico_de_rachas,
 }
 PRUEBAS_DISPONIBLES = {
     "Medias": lambda numeros_r, cantidad_de_intervalos: pruebas.prueba_de_medias(numeros_r),
@@ -34,7 +33,6 @@ PRUEBAS_DISPONIBLES = {
     "Chi-cuadrado": lambda numeros_r, cantidad_de_intervalos: pruebas.prueba_chi_cuadrado(numeros_r, cantidad_de_intervalos),
     "Kolmogorov-Smirnov": lambda numeros_r, cantidad_de_intervalos: pruebas.prueba_kolmogorov_smirnov(numeros_r, cantidad_de_intervalos),
     "Póker": lambda numeros_r, cantidad_de_intervalos: pruebas.prueba_de_poker(numeros_r),
-    "Rachas": lambda numeros_r, cantidad_de_intervalos: pruebas.prueba_de_rachas(numeros_r),
 }
 
 secuencias_generadas = []

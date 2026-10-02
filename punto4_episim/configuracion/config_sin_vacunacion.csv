@@ -1,0 +1,14 @@
+parametro,min,max
+poblacion,10000,10000
+infectados_iniciales,10,10
+dias,365,365
+contactos_maximos_k,4,4
+umbral_control,10,10
+seleccion_solo_susceptibles,1,1
+beta,0.3,0.5
+probabilidad_transmision,0.4,0.6
+tasa_vacunacion,0,0
+efectividad_vacuna,0.80,0.95
+letalidad,0.005,0.02
+periodo_incubacion,2,5
+periodo_infeccioso,7,14

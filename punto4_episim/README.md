@@ -1,35 +1,41 @@
-# Punto 4: EpiSim, simulación Montecarlo de propagación de enfermedades contagiosas
+# Punto 4: EpiSim, simulación Monte Carlo de propagación de enfermedades contagiosas
 
 Simulación Montecarlo de un modelo SEIR modificado con vacunación sobre una población
 de 10.000 individuos, durante 365 días y con 1.000 réplicas por escenario. Toda la
 aleatoriedad proviene del generador congruencial lineal del punto 3
-(`punto3_generadores_pseudoaleatorios`); no se usa `random` ni `numpy.random`.
+(`punto3_generadores_pseudoaleatorios`); no se usa `random` ni `numpy.random` para
+generar resultados.
 
 ## Requisitos
 
-- Python 3.14.
-- La simulación (`ejecutar_episim.py`, `motor_episim.py`, `traza_ejemplo.py`) solo usa la
-  biblioteca estándar y el punto 3.
-- El análisis (`analisis_episim.py`) usa `numpy`, `pandas`, `matplotlib` y `scipy`
-  (pandas la requiere para la correlación de Spearman):
+- Python 3.10 o superior.
+- El paquete del punto 3 debe estar disponible desde la raíz del repositorio.
+- El análisis (`analisis_episim.py`) usa `numpy`, `pandas` y `matplotlib`. No requiere
+  `scipy`: la correlación de Spearman se calcula directamente sobre los rangos.
 
 ```bash
-python -m pip install numpy pandas matplotlib scipy
+python -m pip install numpy pandas matplotlib
 ```
 
 ## Uso
 
-Los comandos se ejecutan desde la carpeta `punto4_episim`, siempre en este orden:
+Los comandos recomendados se ejecutan desde la raíz del repositorio, siempre en este orden:
 
 ```bash
-python ejecutar_episim.py      # simula y guarda los CSV en resultados/
-python analisis_episim.py      # lee los CSV y genera graficos/ y la tabla de estadísticas
+python -m punto4_episim.execute_episim  # simula y guarda los CSV
+python -m punto4_episim.analisis_episim # genera gráficos y tablas
 ```
 
 El segundo paso no simula: solo lee los archivos del primero, por lo que puede repetirse
 sin volver a correr la simulación.
 
-### Argumentos de `ejecutar_episim.py`
+También es posible ejecutar el análisis directamente desde `punto4_episim`:
+
+```bash
+python analisis_episim.py
+```
+
+### Argumentos de `execute_episim.py`
 
 | Argumento | Valor por defecto | Significado |
 |---|---|---|
@@ -40,39 +46,32 @@ sin volver a correr la simulación.
 Prueba rápida (menos de un minuto):
 
 ```bash
-python ejecutar_episim.py --replicas 20 --rep-sensibilidad 5
-python analisis_episim.py
+python -m punto4_episim.execute_episim --replicas 20 --rep-sensibilidad 5
+python -m punto4_episim.analisis_episim
 ```
-
-### Traza de un día de simulación
-
-```bash
-python traza_ejemplo.py [semilla]
-```
-
-Imprime, número por número, cómo se usa cada pseudoaleatorio: los parámetros de la
-réplica, la tabla de rangos de r que define el número de contactos y, para cada infectado,
-el sorteo de contactos, la selección del individuo y la evaluación de la transmisión.
-Usa las mismas funciones del motor.
 
 ## Archivos
 
 | Archivo | Papel |
 |---|---|
-| `motor_episim.py` | rutinas de biblioteca: generador, lectura de configuración, pasos estocásticos y simulación de una réplica |
-| `ejecutar_episim.py` | programa principal: corre los escenarios, la sensibilidad y la validación rápida, y guarda los CSV |
-| `analisis_episim.py` | generador de reportes: figuras y tabla de estadísticas descriptivas |
-| `traza_ejemplo.py` | ejemplo trabajado de un día, para evidenciar el uso de los pseudoaleatorios |
-| `flujo_aleatorio.py` | envoltorio alterno del generador del punto 3, con autoprueba; el motor no lo utiliza |
+| `execute_episim.py` | programa principal: corre escenarios, sensibilidad, validación del generador y medición de tiempos |
+| `analisis_episim.py` | genera las figuras, correlaciones y tabla de estadísticas a partir de los CSV |
+| `main.py` | fachada pública de la API del paquete |
+| `config.py` | lectura de configuraciones y muestreo de parámetros |
+| `models.py` | tipos, estados y estructuras de datos del modelo |
+| `random.py` | adaptador del generador congruencial lineal y muestreo uniforme |
+| `runner.py` | ejecución de réplicas y cálculo de sus métricas |
+| `simulation.py` | implementación del modelo SEIR y sus transiciones |
+| `structures.py` | piscina indexada y muestreo de contactos |
 | `configuracion/` | un archivo CSV de parámetros por escenario |
 | `resultados/` | salidas de la simulación (se crea al ejecutar) |
-| `graficos/` | figuras (se crea al ejecutar el análisis) |
+| `graficos/` | figuras generadas por el análisis |
 
 ## Configuración de escenarios
 
 Cada escenario es un archivo CSV con las columnas `parametro,min,max`. Un parámetro fijo
 se escribe con `min` igual a `max`. Para crear un escenario nuevo basta copiar un archivo,
-cambiar sus valores y registrarlo en el diccionario `ESCENARIOS` de `ejecutar_episim.py`;
+cambiar sus valores y registrarlo en el diccionario `ESCENARIOS` de `execute_episim.py`;
 no hay que modificar el motor.
 
 | Parámetro | Valor | Momento del sorteo |
@@ -161,7 +160,7 @@ con vacunación 3282.24.
 | `tiempos.csv` | segundos por escenario y por réplica |
 | `validacion_generador.csv` | media, varianza y chi-cuadrado de 100.000 números del generador |
 | `estadisticas_descriptivas.csv` | media, desviación, IC 95 %, mínimo, cuartiles y máximo por escenario (lo crea el análisis) |
-| `correlaciones_spearman.csv` | correlación de cada parámetro con el total de infectados y con el pico (lo crea el análisis) |
+| `correlaciones_spearman.csv` | correlación de cada parámetro con el total de infectados y con el pico (lo crea el análisis, sin `scipy`) |
 
 ### `graficos/`
 
@@ -177,31 +176,26 @@ con vacunación 3282.24.
 
 ## Funciones
 
-### motor_episim.py (rutinas de biblioteca)
+### Módulos de simulación
 
 | Función | Parámetros | Retorno |
 |---|---|---|
-| `PseudorandomGenerator` | `seed`, `a`, `c`, `m` | objeto con `next()` (siguiente R) y `state` (último X consumido) |
-| `uniform` | `gen`, `a`, `b` | a + (b − a)·R |
-| `read_config` | `path` | diccionario `{parametro: (min, max)}` |
-| `sample_params` | `config`, `gen` | diccionario con los parámetros de una réplica |
-| `build_contact_cdf` | `beta`, `k` | probabilidades acumuladas de Binomial(k, β/k) |
-| `sample_contact_count` | `gen`, `cdf_table` | número de contactos (paso 1) |
-| `select_susceptible` | `gen`, `susceptible_list` | individuo elegido (paso 2) |
-| `evaluate_transmission` | `gen`, `base_p`, `vaccinated`, `effectiveness` | `True` si hay contagio (paso 3) |
-| `init_population` | `params`, `gen` | estados, vacunados y casos índice |
-| `sample_duration` | `gen`, `min`, `max` | período en días, U(min, max) redondeado |
-| `apply_scheduled_transitions` | día, estados, agendas y contadores | aplica E → I e I → R del día |
-| `simulate_epidemic` | `params`, `gen` | serie diaria `(dia, S, E, I, R, F)` |
-| `summarize_replica` | `serie`, `params`, `initial_seed`, `threshold` | diccionario con las métricas de la réplica |
-| `run_scenario` | `config`, `semilla_base`, `n_replicas`, `gen`, `overwrite`, `verbose` | (resúmenes, series, segundos) |
+| `PseudorandomGenerator` (`random.py`) | `seed`, `a`, `c`, `m` | objeto con `next()` y `state` |
+| `read_config` (`config.py`) | `path` | diccionario `{parametro: (min, max)}` |
+| `sample_params` (`config.py`) | `config`, `gen` | `ReplicaParams` |
+| `build_contact_cdf` (`structures.py`) | `beta`, `k` | CDF de Binomial(k, β/k) |
+| `sample_contact_count` (`structures.py`) | `gen`, `cdf` | número de contactos |
+| `simulate_epidemic` (`simulation.py`) | `params`, `gen` | lista de `DailyRecord` |
+| `EpidemicSimulation.run` (`simulation.py`) | — | serie diaria S, E, I, R y F |
+| `summarize_replica` (`runner.py`) | `records`, `params`, `initial_seed` | métricas de una réplica |
+| `run_scenario` (`runner.py`) | `config`, `semilla_base`, `n_replicas`, `gen`, `overwrite`, `verbose` | resúmenes, series y segundos |
 
-### ejecutar_episim.py (programa principal)
+### execute_episim.py (programa principal)
 
 | Función | Papel |
 |---|---|
 | `validate_generator` | media, varianza y chi-cuadrado (10 intervalos) de 100.000 números |
-| `sensitivity_analysis` | corre el caso base y los ocho casos mínimo/máximo |
+| `sensitivity_analysis` | corre el caso base y los ocho casos mínimo/máximo, usando una secuencia continua del generador |
 | `save_summary`, `save_series` | escriben los CSV de cada escenario |
 | `peak_memory_mb` | memoria pico del proceso (solo disponible en Linux) |
 | `main` | lee los argumentos y coordina todo |
@@ -214,7 +208,7 @@ con vacunación 3282.24.
 | `plot_histograms` | fig03 |
 | `plot_comparison` | fig04 |
 | `plot_tornado` | fig05 |
-| `plot_correlations` | fig06 y `correlaciones_spearman.csv` |
+| `plot_correlations` | fig06 y `correlaciones_spearman.csv`, calculadas sobre rangos |
 | `plot_homogeneous_comparison` | fig07 |
 | `build_statistics_table` | `estadisticas_descriptivas.csv` |
 
@@ -272,7 +266,8 @@ ejecución se detiene.
   vacunación, efectividad) se lleva a su mínimo y a su máximo con los demás fijos en el
   punto medio de su rango.
 - **Spearman:** correlación por rangos entre cada parámetro sorteado y el resultado, con
-  las 1.000 réplicas del escenario con vacunación.
+  las réplicas disponibles del escenario con vacunación. Se calcula usando `rank()` de
+  pandas, por lo que no se necesita `scipy`.
 
 ### Intervalos de confianza
 
@@ -285,5 +280,5 @@ percentiles 2.5 y 97.5 de las réplicas, que describen la variación entre répl
   solo existe en Linux.
 - Con m par, R puede valer exactamente 1.0 cuando X = m − 1; el motor no protege los
   índices piso(R·n) frente a ese caso. Con la semilla por defecto no se alcanza ese valor.
-- `validate_generator` es una comprobación rápida; las seis pruebas completas están en el
-  punto 3 y pueden correrse sobre este generador con `python flujo_aleatorio.py`.
+- `validate_generator` es una comprobación rápida del generador. Las pruebas completas
+  del generador se mantienen en `punto3_generadores_pseudoaleatorios`.

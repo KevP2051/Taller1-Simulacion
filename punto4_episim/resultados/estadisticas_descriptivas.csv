@@ -1,0 +1,29 @@
+escenario,variable,n,media,desv_est,IC95_inf,IC95_sup,min,p25,mediana,p75,max
+sin_vacunacion,Pico de infectados,1000,5517.98,1005.25,5455.67,5580.28,2652.0,4853.0,5646.5,6298.0,7313.0
+sin_vacunacion,Día del pico,1000,81.37,25.21,79.81,82.94,47.0,63.0,75.0,93.0,216.0
+sin_vacunacion,Total de infectados,1000,10000.0,0.0,10000.0,10000.0,10000.0,10000.0,10000.0,10000.0,10000.0
+sin_vacunacion,Muertes,1000,127.2,44.58,124.44,129.96,37.0,89.0,129.0,164.0,235.0
+sin_vacunacion,Días hasta control,1000,96.28,25.34,94.71,97.85,61.0,77.75,90.0,108.0,232.0
+sin_vacunacion,% réplicas con brote mayor (≥5 % de N),1000,100.0,,,,,,,,
+sin_vacunacion,% réplicas sin control en 365 días,1000,0.0,,,,,,,,
+con_vacunacion,Pico de infectados,1000,534.92,727.83,489.81,580.03,10.0,16.0,161.5,859.25,3778.0
+con_vacunacion,Día del pico,1000,115.38,90.5,109.77,120.98,0.0,19.0,114.0,174.0,365.0
+con_vacunacion,Total de infectados,1000,3282.24,3192.6,3084.36,3480.11,11.0,82.0,2593.0,6211.75,10000.0
+con_vacunacion,Muertes,1000,40.62,45.41,37.81,43.44,0.0,1.0,26.0,69.0,220.0
+con_vacunacion,Días hasta control,843,146.82,113.94,139.13,154.52,1.0,18.5,159.0,236.0,365.0
+con_vacunacion,% réplicas con brote mayor (≥5 % de N),1000,62.0,,,,,,,,
+con_vacunacion,% réplicas sin control en 365 días,1000,15.7,,,,,,,,
+sin_vacunacion_homogenea,Pico de infectados,1000,2077.02,788.83,2028.13,2125.92,332.0,1458.0,2049.5,2685.0,3943.0
+sin_vacunacion_homogenea,Día del pico,1000,79.95,20.71,78.67,81.23,49.0,65.0,75.0,89.0,210.0
+sin_vacunacion_homogenea,Total de infectados,1000,7921.0,1054.94,7855.61,7986.38,4033.0,7302.75,8125.0,8748.5,9461.0
+sin_vacunacion_homogenea,Muertes,1000,99.3,37.44,96.98,101.62,20.0,69.0,99.0,129.0,197.0
+sin_vacunacion_homogenea,Días hasta control,999,149.29,39.17,146.86,151.72,88.0,121.0,140.0,169.0,338.0
+sin_vacunacion_homogenea,% réplicas con brote mayor (≥5 % de N),1000,100.0,,,,,,,,
+sin_vacunacion_homogenea,% réplicas sin control en 365 días,1000,0.1,,,,,,,,
+con_vacunacion_homogenea,Pico de infectados,1000,242.11,305.82,223.15,261.06,10.0,16.0,103.0,360.5,1703.0
+con_vacunacion_homogenea,Día del pico,1000,98.94,74.44,94.33,103.56,0.0,17.5,106.0,142.25,362.0
+con_vacunacion_homogenea,Total de infectados,1000,1892.92,1808.81,1780.81,2005.03,11.0,78.0,1567.0,3387.75,6652.0
+con_vacunacion_homogenea,Muertes,1000,24.03,26.33,22.4,25.66,0.0,1.0,15.0,39.25,128.0
+con_vacunacion_homogenea,Días hasta control,940,164.43,118.23,156.87,171.99,1.0,21.0,193.5,262.25,365.0
+con_vacunacion_homogenea,% réplicas con brote mayor (≥5 % de N),1000,61.1,,,,,,,,
+con_vacunacion_homogenea,% réplicas sin control en 365 días,1000,6.0,,,,,,,,

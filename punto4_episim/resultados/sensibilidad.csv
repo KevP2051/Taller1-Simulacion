@@ -1,0 +1,10 @@
+variable,nivel,valor,media_total_infectados,media_pico_I,media_muertes,n_replicas
+base,base,,3314.71,238.28,41.25,100
+beta,min,0.3,70.42,14.8,0.98,100
+beta,max,0.5,6042.89,948.26,75.84,100
+probabilidad_transmision,min,0.4,132.1,18.01,1.66,100
+probabilidad_transmision,max,0.6,5738.87,809.52,71.66,100
+tasa_vacunacion,min,0.3,8229.74,1770.06,102.74,100
+tasa_vacunacion,max,0.7,46.74,13.46,0.63,100
+efectividad_vacuna,min,0.8,5941.05,559.33,74.76,100
+efectividad_vacuna,max,0.95,1347.46,86.76,15.9,100

@@ -1,4 +1,5 @@
 import csv
+import math
 from itertools import zip_longest
 
 from matplotlib.figure import Figure
@@ -64,9 +65,14 @@ def exportar_secuencia_a_csv(secuencia, ruta_del_archivo):
 
 
 def crear_figura_con_paneles(cantidad_de_paneles, titulo):
-    figura = Figure(figsize=(max(6, 5 * cantidad_de_paneles), 4.5), layout="constrained")
+    columnas = math.ceil(math.sqrt(cantidad_de_paneles))
+    filas = math.ceil(cantidad_de_paneles / columnas)
+    figura = Figure(figsize=(max(6, 4.8 * columnas), 4 * filas), layout="constrained")
     figura.suptitle(titulo)
-    return figura, figura.subplots(1, cantidad_de_paneles, squeeze=False)[0]
+    paneles = figura.subplots(filas, columnas, squeeze=False).flatten()
+    for panel_sobrante in paneles[cantidad_de_paneles:]:
+        panel_sobrante.set_visible(False)
+    return figura, paneles[:cantidad_de_paneles]
 
 
 def crear_histograma_de_secuencia(secuencia):
@@ -78,7 +84,7 @@ def crear_histograma_de_secuencia(secuencia):
         )
     if "numeros_normales" in secuencia:
         distribuciones.append(("Z_i normal estándar N(0, 1)", secuencia["numeros_normales"], None))
-    figura, paneles = crear_figura_con_paneles(len(distribuciones), f"Histograma de frecuencias: {secuencia['etiqueta']}")
+    figura, paneles = crear_figura_con_paneles(len(distribuciones), f"Histograma de frecuencias:\n{acortar_etiqueta(secuencia['etiqueta'])}")
     for panel, (nombre_de_la_distribucion, valores, rango) in zip(paneles, distribuciones):
         panel.hist(valores, bins=cantidad_de_intervalos_por_defecto(len(valores)), range=rango, edgecolor="black")
         panel.set_title(nombre_de_la_distribucion)
@@ -95,9 +101,8 @@ def describir_criterio(resultado):
 
 def describir_resultado(resultado):
     decision = "pasa" if resultado["pasa"] else "no pasa"
-    etiqueta_en_dos_lineas = resultado["etiqueta"].replace(" (", "\n(", 1)
     return (
-        f"{etiqueta_en_dos_lineas}\n"
+        f"{acortar_etiqueta(resultado['etiqueta'])}\n"
         f"Estadístico = {resultado['estadistico']:.5f}, criterio = {describir_criterio(resultado)}: {decision}"
     )
 

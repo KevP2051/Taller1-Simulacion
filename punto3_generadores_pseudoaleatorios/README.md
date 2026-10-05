@@ -174,7 +174,7 @@ pruebas comparan contra la uniforme en [0, 1).
 
 Las pruebas de medias y de varianza calculan una media y una varianza por cada método
 generado y las muestran en un mismo gráfico, con su intervalo de aceptación y el valor
-teórico esperado. Las demás pruebas presentan una ventana por prueba, con un panel por
+teórico esperado. Las demás pruebas presentan un gráfico por prueba, con un panel por
 método.
 
 ### Nivel de significancia

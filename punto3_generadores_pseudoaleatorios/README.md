@@ -97,8 +97,8 @@ semilla), `hull_dobell` y `avisos` (colapso a cero, ciclo, período o pares omit
 
 | Función | Parámetros | Retorno |
 |---|---|---|
-| `prueba_de_medias` | `numeros_r` | resultado con la media y el intervalo 0.5 ± Z·√(1/12)/√n |
-| `prueba_de_varianza` | `numeros_r` | resultado con la varianza muestral (n − 1) y su intervalo de aceptación |
+| `prueba_de_medias` | `numeros_r` | resultado con la media, el intervalo 0.5 ± Z·√(1/12)/√n y las medias por bloque |
+| `prueba_de_varianza` | `numeros_r` | resultado con la varianza muestral (n − 1), su intervalo de aceptación y las varianzas por bloque |
 | `prueba_chi_cuadrado` | `numeros_r`, `cantidad_de_intervalos` | resultado con frecuencias observadas por intervalo y frecuencia esperada |
 | `prueba_kolmogorov_smirnov` | `numeros_r`, `cantidad_de_intervalos` | resultado con S(x), F(x), diferencias, DMAX y DMAXP |
 | `prueba_de_poker` | `numeros_r` | resultado con frecuencias observadas y esperadas por mano |
@@ -106,6 +106,10 @@ semilla), `hull_dobell` y `avisos` (colapso a cero, ciclo, período o pares omit
 | `valor_critico_chi_cuadrado` | `probabilidad_acumulada`, `grados_de_libertad` | valor crítico chi-cuadrado truncado |
 | `probabilidad_acumulada_chi_cuadrado` | `valor_x`, `grados_de_libertad` | P(χ² ≤ x), mediante la función gamma incompleta regularizada |
 | `cantidad_de_intervalos_por_defecto` | `cantidad_de_numeros` | k = √n redondeado (mínimo 2) |
+| `dividir_en_bloques` | `numeros_r` | lista de bloques consecutivos de igual tamaño |
+| `calcular_limites_de_medias` | `cantidad_de_numeros` | (LI, LS) de la prueba de medias |
+| `calcular_varianza` | `numeros_r` | varianza muestral con n − 1 |
+| `calcular_limites_de_varianza` | `cantidad_de_numeros` | (χ² inferior, χ² superior, LI, LS) de la prueba de varianza |
 
 Un resultado es un diccionario con `prueba`, `estadistico`, `valor_critico`, `pasa`,
 `avisos` y los datos de su gráfico.
@@ -122,8 +126,8 @@ Un resultado es un diccionario con `prueba`, `estadistico`, `valor_critico`, `pa
 | Función | Parámetros | Retorno |
 |---|---|---|
 | `crear_histograma_de_secuencia` | `secuencia` | figura con un histograma por distribución (R_i, U(a, b), normal) |
-| `crear_grafico_de_medias` | lista de resultados | figura con la media de cada método, su intervalo de aceptación y la media teórica |
-| `crear_grafico_de_varianzas` | lista de resultados | figura con la varianza de cada método, su intervalo de aceptación y la varianza teórica |
+| `crear_grafico_de_medias` | lista de resultados | histograma de las medias por bloque con su intervalo de aceptación, la media teórica y la media de la secuencia, un panel por método |
+| `crear_grafico_de_varianzas` | lista de resultados | histograma de las varianzas por bloque con su intervalo de aceptación, la varianza teórica y la varianza de la secuencia, un panel por método |
 | `crear_grafico_chi_cuadrado` | lista de resultados | figura de barras observadas vs esperadas, un panel por método |
 | `crear_grafico_kolmogorov_smirnov` | lista de resultados | figura de S(x) empírica vs F(x) = x con DMAX resaltado, un panel por método |
 | `crear_grafico_de_poker` | lista de resultados | figura de manos observadas vs esperadas, un panel por método |
@@ -190,10 +194,24 @@ pruebas comparan contra la uniforme en [0, 1).
 
 ### Comparación entre métodos
 
-Las pruebas de medias y de varianza calculan una media y una varianza por cada método
-generado y las muestran en un mismo gráfico, con su intervalo de aceptación y el valor
-teórico esperado. Las demás pruebas presentan un gráfico por prueba, con un panel por
-método.
+Cada prueba presenta un gráfico con un panel por método generado.
+
+### Distribución de medias y varianzas por bloques
+
+La prueba de medias y la de varianza producen un solo estadístico por secuencia. Para
+mostrar la distribución de las medias y de las varianzas, el gráfico divide la secuencia
+en bloques consecutivos de igual tamaño, calcula la media y la varianza de cada bloque y
+las presenta en un histograma junto con:
+
+- el intervalo de aceptación al 95 % para un bloque de ese tamaño, con las mismas fórmulas
+  de la prueba y n igual al tamaño del bloque;
+- el valor teórico (0.5 o 1/12) y el estadístico de la secuencia completa;
+- cuántos bloques quedan dentro del intervalo (se espera cerca del 95 %).
+
+El número de bloques es √n redondeado, el mismo criterio de los intervalos de
+chi-cuadrado, y cada bloque tiene al menos dos números. Con n = 1000 se forman 32 bloques
+de 31 números; los números que sobran al final no entran en ningún bloque. La decisión de
+la prueba no cambia: se toma con el estadístico de la secuencia completa.
 
 ### Nivel de significancia
 

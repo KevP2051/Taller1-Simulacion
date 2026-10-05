@@ -111,43 +111,50 @@ def acortar_etiqueta(etiqueta):
     return etiqueta.replace(" (", "\n(", 1).replace(", a =", ",\na =", 1)
 
 
-def crear_grafico_de_intervalos(resultados, titulo, nombre_del_estadistico, nombre_del_valor_esperado):
-    figura = Figure(figsize=(max(7, 2.8 * len(resultados)), 5.5), layout="constrained")
-    figura.suptitle(titulo)
-    panel = figura.subplots()
-    posiciones = list(range(len(resultados)))
-    valor_esperado = resultados[0]["valor_esperado"]
-    panel.errorbar(
-        posiciones,
-        [valor_esperado] * len(resultados),
-        yerr=[
-            [valor_esperado - resultado["limite_inferior"] for resultado in resultados],
-            [resultado["limite_superior"] - valor_esperado for resultado in resultados],
-        ],
-        fmt="none",
-        capsize=10,
-        color="gray",
-        label="Intervalo de aceptación (95 %)",
-    )
-    for posicion, resultado in zip(posiciones, resultados):
-        panel.scatter(posicion, resultado["estadistico"], s=70, zorder=3, color="tab:green" if resultado["pasa"] else "tab:red")
-        panel.annotate(f"{resultado['estadistico']:.5f}", (posicion, resultado["estadistico"]), textcoords="offset points", xytext=(12, 0), va="center")
-    panel.axhline(valor_esperado, linestyle="--", color="tab:blue", label=f"{nombre_del_valor_esperado} = {valor_esperado:.5f}")
-    panel.scatter([], [], color="tab:green", label=f"{nombre_del_estadistico} (pasa)")
-    panel.scatter([], [], color="tab:red", label=f"{nombre_del_estadistico} (no pasa)")
-    panel.set_xticks(posiciones, [acortar_etiqueta(resultado["etiqueta"]) for resultado in resultados], fontsize=8)
-    panel.set_xlim(-0.6, len(resultados) - 0.4)
-    panel.set_ylabel(nombre_del_estadistico)
-    panel.legend(fontsize=8)
+def crear_grafico_de_distribucion_por_bloques(resultados, titulo, nombre_del_estadistico, nombre_del_valor_esperado):
+    figura, paneles = crear_figura_con_paneles(len(resultados), titulo)
+    for panel, resultado in zip(paneles, resultados):
+        valores_por_bloque = resultado["valores_por_bloque"]
+        limite_inferior_del_bloque, limite_superior_del_bloque = resultado["limites_por_bloque"]
+        bloques_dentro = sum(1 for valor in valores_por_bloque if limite_inferior_del_bloque <= valor <= limite_superior_del_bloque)
+        panel.axvspan(
+            limite_inferior_del_bloque,
+            limite_superior_del_bloque,
+            color="tab:green",
+            alpha=0.15,
+            label=f"Intervalo de aceptación por bloque (95 %): {bloques_dentro} de {len(valores_por_bloque)} bloques dentro",
+        )
+        panel.hist(
+            valores_por_bloque,
+            bins=cantidad_de_intervalos_por_defecto(len(valores_por_bloque)),
+            edgecolor="black",
+            label=f"{nombre_del_estadistico} de {len(valores_por_bloque)} bloques de {resultado['tamano_del_bloque']} números",
+        )
+        panel.axvline(resultado["valor_esperado"], linestyle="--", color="tab:blue", label=f"{nombre_del_valor_esperado} = {resultado['valor_esperado']:.5f}")
+        panel.axvline(
+            resultado["estadistico"],
+            color="tab:green" if resultado["pasa"] else "tab:red",
+            linewidth=2,
+            label=f"{nombre_del_estadistico} de la secuencia = {resultado['estadistico']:.5f}",
+        )
+        panel.set_xlabel(f"{nombre_del_estadistico} por bloque")
+        panel.set_ylabel("Frecuencia (bloques)")
+        panel.set_ylim(0, panel.get_ylim()[1] * 1.7)
+        panel.legend(fontsize=7, loc="upper left")
+        panel.set_title(describir_resultado(resultado), fontsize=9)
     return figura
 
 
 def crear_grafico_de_medias(resultados):
-    return crear_grafico_de_intervalos(resultados, "Prueba de medias: media de cada método vs intervalo de aceptación", "Media", "Media teórica")
+    return crear_grafico_de_distribucion_por_bloques(
+        resultados, "Prueba de medias: distribución de las medias por bloque", "Media", "Media teórica"
+    )
 
 
 def crear_grafico_de_varianzas(resultados):
-    return crear_grafico_de_intervalos(resultados, "Prueba de varianza: varianza de cada método vs intervalo de aceptación", "Varianza", "Varianza teórica 1/12")
+    return crear_grafico_de_distribucion_por_bloques(
+        resultados, "Prueba de varianza: distribución de las varianzas por bloque", "Varianza", "Varianza teórica 1/12"
+    )
 
 
 def crear_grafico_kolmogorov_smirnov(resultados):

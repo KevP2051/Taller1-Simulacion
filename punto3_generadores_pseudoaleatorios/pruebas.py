@@ -107,12 +107,39 @@ def obtener_limites_de_intervalos(cantidad_de_intervalos):
     ]
 
 
-def prueba_de_medias(numeros_r):
+def dividir_en_bloques(numeros_r):
     cantidad_de_numeros = len(numeros_r)
-    media = truncar_a_cinco_decimales(sum(numeros_r) / cantidad_de_numeros)
+    cantidad_de_bloques = max(1, min(cantidad_de_intervalos_por_defecto(cantidad_de_numeros), cantidad_de_numeros // 2))
+    tamano_del_bloque = cantidad_de_numeros // cantidad_de_bloques
+    return [numeros_r[indice * tamano_del_bloque:(indice + 1) * tamano_del_bloque] for indice in range(cantidad_de_bloques)]
+
+
+def calcular_limites_de_medias(cantidad_de_numeros):
     margen_de_aceptacion = VALOR_Z * math.sqrt(1 / 12) / math.sqrt(cantidad_de_numeros)
-    limite_inferior = truncar_a_cinco_decimales(0.5 - margen_de_aceptacion)
-    limite_superior = truncar_a_cinco_decimales(0.5 + margen_de_aceptacion)
+    return truncar_a_cinco_decimales(0.5 - margen_de_aceptacion), truncar_a_cinco_decimales(0.5 + margen_de_aceptacion)
+
+
+def calcular_varianza(numeros_r):
+    media = sum(numeros_r) / len(numeros_r)
+    return truncar_a_cinco_decimales(sum((numero_r - media) ** 2 for numero_r in numeros_r) / (len(numeros_r) - 1))
+
+
+def calcular_limites_de_varianza(cantidad_de_numeros):
+    grados_de_libertad = cantidad_de_numeros - 1
+    chi_cuadrado_inferior = valor_critico_chi_cuadrado(NIVEL_DE_SIGNIFICANCIA / 2, grados_de_libertad)
+    chi_cuadrado_superior = valor_critico_chi_cuadrado(1 - NIVEL_DE_SIGNIFICANCIA / 2, grados_de_libertad)
+    return (
+        chi_cuadrado_inferior,
+        chi_cuadrado_superior,
+        truncar_a_cinco_decimales(chi_cuadrado_inferior / (12 * grados_de_libertad)),
+        truncar_a_cinco_decimales(chi_cuadrado_superior / (12 * grados_de_libertad)),
+    )
+
+
+def prueba_de_medias(numeros_r):
+    media = truncar_a_cinco_decimales(sum(numeros_r) / len(numeros_r))
+    limite_inferior, limite_superior = calcular_limites_de_medias(len(numeros_r))
+    bloques = dividir_en_bloques(numeros_r)
     return {
         "prueba": "Medias",
         "estadistico": media,
@@ -122,18 +149,16 @@ def prueba_de_medias(numeros_r):
         "limite_inferior": limite_inferior,
         "limite_superior": limite_superior,
         "valor_esperado": 0.5,
+        "tamano_del_bloque": len(bloques[0]),
+        "valores_por_bloque": [truncar_a_cinco_decimales(sum(bloque) / len(bloque)) for bloque in bloques],
+        "limites_por_bloque": calcular_limites_de_medias(len(bloques[0])),
     }
 
 
 def prueba_de_varianza(numeros_r):
-    cantidad_de_numeros = len(numeros_r)
-    grados_de_libertad = cantidad_de_numeros - 1
-    media = sum(numeros_r) / cantidad_de_numeros
-    varianza = truncar_a_cinco_decimales(sum((numero_r - media) ** 2 for numero_r in numeros_r) / grados_de_libertad)
-    chi_cuadrado_inferior = valor_critico_chi_cuadrado(NIVEL_DE_SIGNIFICANCIA / 2, grados_de_libertad)
-    chi_cuadrado_superior = valor_critico_chi_cuadrado(1 - NIVEL_DE_SIGNIFICANCIA / 2, grados_de_libertad)
-    limite_inferior = truncar_a_cinco_decimales(chi_cuadrado_inferior / (12 * grados_de_libertad))
-    limite_superior = truncar_a_cinco_decimales(chi_cuadrado_superior / (12 * grados_de_libertad))
+    varianza = calcular_varianza(numeros_r)
+    chi_cuadrado_inferior, chi_cuadrado_superior, limite_inferior, limite_superior = calcular_limites_de_varianza(len(numeros_r))
+    bloques = dividir_en_bloques(numeros_r)
     return {
         "prueba": "Varianza",
         "estadistico": varianza,
@@ -145,6 +170,9 @@ def prueba_de_varianza(numeros_r):
         "limite_inferior": limite_inferior,
         "limite_superior": limite_superior,
         "valor_esperado": truncar_a_cinco_decimales(1 / 12),
+        "tamano_del_bloque": len(bloques[0]),
+        "valores_por_bloque": [calcular_varianza(bloque) for bloque in bloques],
+        "limites_por_bloque": calcular_limites_de_varianza(len(bloques[0]))[2:],
     }
 
 

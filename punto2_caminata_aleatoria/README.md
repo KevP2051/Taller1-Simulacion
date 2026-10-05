@@ -47,7 +47,8 @@ Después el programa, sin más intervención:
 3. Simula las 100 réplicas en 1D, 2D y 3D, mide tiempo y memoria y genera los gráficos.
 4. Imprime el cuadro comparativo de eficiencia.
 
-La ejecución completa tarda alrededor de tres minutos.
+Las simulaciones de las tres dimensiones suman 504 s (≈ 8.4 min) en el equipo descrito
+en *Requisitos*.
 
 ### Archivo de semillas
 
@@ -199,11 +200,15 @@ la misma forma.
 ## Eficiencia computacional
 
 - **Tiempo:** cada paso hace un número constante de operaciones, así que el tiempo de
-  una réplica crece en proporción a los pasos, O(n). Pasar de 1D a 3D solo agrega sumas
-  por coordenada, por lo que el tiempo crece poco con la dimensión.
-- **Memoria:** la memoria pico de una réplica la dominan los 1.000.000 de números R que
-  se generan antes de simular, O(n). La posición ocupa espacio constante en cualquier
-  dimensión.
+  una réplica crece en proporción a los pasos, O(n). Pasar de 1D a 2D y a 3D agrega la
+  indexación de la tupla de desplazamiento y la actualización de coordenadas adicionales:
+  el tiempo por paso aumenta 16 % y 18 % respecto a 1D, y la diferencia entre 2D y 3D es
+  de 1.7 % (una sola medición, sin repeticiones).
+- **Memoria:** el pico de una réplica (69.5 MB) lo dominan las dos listas de 1.000.000
+  de elementos que construye el generador del punto 3 (los X enteros y los R
+  flotantes), que coexisten mientras se generan los números. Es O(n) por réplica y no
+  depende del número de réplicas, porque las listas se liberan al terminar cada una. La
+  posición ocupa espacio constante en cualquier dimensión.
 - El tiempo se mide con `time.perf_counter` sobre las 100 réplicas, y la memoria con
   `tracemalloc` sobre una sola réplica.
 
@@ -216,8 +221,10 @@ Resultados con las semillas de `semillas_caminata.csv`, en el equipo descrito en
 | 2D | 175 | 69.5 | 0.69 |
 | 3D | 178 | 69.5 | 0.27 |
 
-La memoria es la misma en las tres dimensiones porque la ocupan los números R, y el
-tiempo crece alrededor de un 25 % de 1D a 3D por las coordenadas adicionales.
+La memoria es la misma en las tres dimensiones porque la ocupan las listas de X y R del
+generador, no la posición. El tiempo por paso aumenta un 16 % de 1D a 2D y un 18 % de
+1D a 3D por las coordenadas adicionales; en total, las tres dimensiones suman 504 s
+(≈ 8.4 min) para 3 × 10⁸ pasos.
 
 ## Limitaciones
 
@@ -231,7 +238,7 @@ tiempo crece alrededor de un 25 % de 1D a 3D por las coordenadas adicionales.
   los pasos, mientras que generarlos paso a paso ocuparía memoria constante; se eligió así para reutilizar el generador del punto 3
   sin modificarlo.
 - **Rendimiento:** el código está en Python puro; las 300 réplicas de 1.000.000 de pasos
-  tardan alrededor de 8.4 minutos.
+  tardan 504 s (≈ 8.4 min) en el equipo descrito.
 - **Resolución de los R:** el punto 3 trunca a cinco decimales. Para elegir entre 2, 4 o 6
   direcciones esa resolución es suficiente, porque los cortes 1/4 y 1/2 son exactos y
   1/6 solo desplaza la probabilidad de cada dirección en menos de 10⁻⁵.

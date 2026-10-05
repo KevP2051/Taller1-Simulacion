@@ -98,27 +98,28 @@ def medir_memoria(dimension):
 
 
 def graficar_histograma_1d(posiciones):
-    # Compara las posiciones finales observadas con la distribución normal teórica.
+    # Compara las frecuencias observadas con la normal teórica escalada a frecuencias.
     # También calcula media, desviación muestral y proporción dentro de una desviación.
     valores = [p[0] for p in posiciones]
     media = sum(valores) / len(valores)
-    # Desviación muestral (n - 1) y proporción dentro de ±1σ, para compararlas con la teoría
     desviacion = math.sqrt(sum((v - media) ** 2 for v in valores) / (len(valores) - 1))
     dentro = sum(1 for v in valores if abs(v) <= math.sqrt(PASOS)) / len(valores)
     print(f"1D -> media = {media:.2f} (teórica 0), desviación = {desviacion:.2f} (teórica {math.sqrt(PASOS):.0f})")
     print(f"1D -> dentro de ±1σ: {dentro:.2%} (teórico 68.27%)")
 
     plt.figure(figsize=(8, 5))
-    plt.hist(valores, bins=15, density=True, edgecolor="black", label="Posiciones finales")
-    # Densidad teórica N(0, n) entre -4σ y 4σ
+    # Histograma de frecuencias (conteo de réplicas por barra)
+    _, bordes, _ = plt.hist(valores, bins=15, edgecolor="black", label="Posiciones finales")
+    ancho = bordes[1] - bordes[0]
+    # Frecuencia esperada por barra = réplicas × ancho de barra × densidad N(0, n)
     sigma = math.sqrt(PASOS)
     xs = [-4 * sigma + i * (8 * sigma) / 200 for i in range(201)]
-    ys = [math.exp(-x * x / (2 * PASOS)) / math.sqrt(2 * math.pi * PASOS) for x in xs]
-    plt.plot(xs, ys, color="red", label="Normal N(0, n)")
+    ys = [REPLICAS * ancho * math.exp(-x * x / (2 * PASOS)) / math.sqrt(2 * math.pi * PASOS) for x in xs]
+    plt.plot(xs, ys, color="red", label="Normal N(0, n) escalada (r · ancho · f(x))")
     plt.title(f"Caminata 1D: posición final tras {PASOS:,} pasos ({REPLICAS} réplicas)")
     plt.xlabel("Posición final")
-    plt.ylabel("Densidad")
-    plt.legend()
+    plt.ylabel("Frecuencia (número de réplicas)")
+    plt.legend(loc="upper left")
     plt.savefig(CARPETA_RESULTADOS / "histograma_1d.png", dpi=150, bbox_inches="tight")
     plt.close()
 

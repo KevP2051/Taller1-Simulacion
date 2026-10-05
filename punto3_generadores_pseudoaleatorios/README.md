@@ -44,10 +44,14 @@ fila corresponde a una secuencia; las columnas que no aplican a un método queda
 
 ```
 metodo,semilla,digitos,a,c,m,cantidad
-cuadrados_medios,5735,4,,,,1000
+cuadrados_medios,10000007,8,,,,1000
 congruencial_lineal,7,,1601,3701,10000,1000
-congruencial_multiplicativo,7,,129,,2147483647,1000
+congruencial_multiplicativo,597509435,,16807,,2147483647,1000
+congruencial_lineal,555555555,,1664525,1013904223,4294967296,1000
 ```
+
+Son los cuatro generadores evaluados en el informe: G1 (cuadrados medios), G2 (ejemplo
+de congruencial lineal), G3 (generador del punto 2) y G4 (generador del punto 4).
 
 ### Ventana
 

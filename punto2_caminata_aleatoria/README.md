@@ -21,7 +21,7 @@ python -m pip install matplotlib
 |---|---|
 | Lenguaje | Python 3.14.0 (matplotlib 3.10.8) |
 | Sistema operativo | Windows 11 Pro 64 bits (versión 10.0.26200) |
-| Procesador | AMD Ryzen 7 5800XT, 8 núcleos y 16 hilos |
+| Procesador | AMD Ryzen 5 7520U, 4 núcleos y 8 hilos |
 | Memoria RAM | 16 GB |
 
 ## Uso

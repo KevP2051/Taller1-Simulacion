@@ -140,7 +140,7 @@ la misma forma.
 
 | Archivo | Contenido |
 |---|---|
-| `histograma_1d.png` | histograma de frecuencias de las posiciones finales en 1D normal N(0, n) |
+| `histograma_1d.png` | histograma de frecuencias de las posiciones finales en 1D, con la normal N(0, n) escalada a frecuencias|
 | `trayectoria_1d.png` | posición contra paso de una caminata de 10.000 pasos |
 | `trayectoria_2d.png` | recorrido de una caminata de 10.000 pasos en el plano |
 | `posiciones_finales_2d.png` | dispersión (scatter) de las 100 posiciones finales en 2D |
@@ -150,8 +150,9 @@ la misma forma.
 
 ### Elección de los gráficos
 
-- **1D:** el histograma muestra la forma de la distribución de las posiciones finales y
-  permite compararla con la normal teórica.
+- **1D:** el histograma de frecuencias muestra la forma de la distribución de las
+  posiciones finales. La normal teórica N(0, n) se escala por réplicas × ancho de barra
+  para que la curva y las barras estén en las mismas unidades (número de réplicas).
 - **2D:** el scatter muestra cómo se reparten las posiciones finales en el plano, sin
   dirección preferida; la trayectoria muestra el recorrido de una sola rana.
 - **3D:** el scatter 3D da la imagen general, pero la perspectiva distorsiona las

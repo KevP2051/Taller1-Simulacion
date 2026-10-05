@@ -231,7 +231,7 @@ tiempo crece alrededor de un 25 % de 1D a 3D por las coordenadas adicionales.
   los pasos, mientras que generarlos paso a paso ocuparía memoria constante; se eligió así para reutilizar el generador del punto 3
   sin modificarlo.
 - **Rendimiento:** el código está en Python puro; las 300 réplicas de 1.000.000 de pasos
-  tardan alrededor de tres minutos.
+  tardan alrededor de 8.4 minutos.
 - **Resolución de los R:** el punto 3 trunca a cinco decimales. Para elegir entre 2, 4 o 6
   direcciones esa resolución es suficiente, porque los cortes 1/4 y 1/2 son exactos y
   1/6 solo desplaza la probabilidad de cada dirección en menos de 10⁻⁵.

@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import matplotlib.pyplot as plt
 
 from punto2_caminata_aleatoria import caminata
-from punto3_generadores_pseudoaleatorios import inicializacion
+from punto3_generadores_pseudoaleatorios import inicializacion, pruebas
 
 PASOS = 1_000_000
 REPLICAS = 100
@@ -45,6 +45,22 @@ def elegir_semillas():
             print(f"Semilla por tiempo: {base}. Encadenando las {REPLICAS} semillas (unos segundos)...")
             return caminata.encadenar_semillas(base, REPLICAS, PASOS)
         print("Opción no válida.")
+
+
+def validar_generador(semilla):
+    # Pruebas del Punto 3 sobre los números de la primera réplica, antes de simular
+    numeros_r = caminata.generar_numeros(semilla, PASOS)
+    intervalos = pruebas.cantidad_de_intervalos_por_defecto(len(numeros_r))
+    resultados = [
+        pruebas.prueba_de_medias(numeros_r),
+        pruebas.prueba_de_varianza(numeros_r),
+        pruebas.prueba_chi_cuadrado(numeros_r, intervalos),
+        pruebas.prueba_kolmogorov_smirnov(numeros_r, intervalos),
+        pruebas.prueba_de_poker(numeros_r),
+    ]
+    print(f"Validación del generador (semilla {semilla}, {PASOS:,} números):")
+    for resultado in resultados:
+        print(f"  {resultado['prueba']:<20} estadístico = {resultado['estadistico']:<12} {'PASA' if resultado['pasa'] else 'NO PASA'}")
 
 
 def ejecutar_replicas(dimension):
@@ -158,9 +174,11 @@ def main():
     SEMILLA_BASE = SEMILLAS[0]
     CARPETA_RESULTADOS.mkdir(exist_ok=True)
     print(f"Semilla base: {SEMILLA_BASE}")
+    validar_generador(SEMILLA_BASE)
     # Se guardan las semillas para poder reproducir la corrida
     (CARPETA_RESULTADOS / "semilla_usada.txt").write_text(
-        f"Semilla base: {SEMILLA_BASE}\nSemillas de las réplicas:\n" + "\n".join(str(s) for s in SEMILLAS) + "\n"
+        f"Semilla base: {SEMILLA_BASE}\nSemillas de las réplicas:\n" + "\n".join(str(s) for s in SEMILLAS) + "\n",
+        encoding="utf-8",
     )
 
     # Probabilidad exacta de retorno 1D: debe dar 0.5, 0.0 y 0.375

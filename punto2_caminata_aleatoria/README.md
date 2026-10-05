@@ -212,9 +212,9 @@ Resultados con las semillas de `semillas_caminata.csv`, en el equipo descrito en
 
 | Dimensión | Tiempo de 100 réplicas (s) | Memoria pico de una réplica (MB) | P(retorno en 1000 pasos) |
 |---|---|---|---|
-| 1D | 44.2 | 69.5 | 0.99 |
-| 2D | 53.3 | 69.5 | 0.69 |
-| 3D | 55.1 | 69.5 | 0.27 |
+| 1D | 151 | 69.5 | 0.99 |
+| 2D | 175 | 69.5 | 0.69 |
+| 3D | 178 | 69.5 | 0.27 |
 
 La memoria es la misma en las tres dimensiones porque la ocupan los números R, y el
 tiempo crece alrededor de un 25 % de 1D a 3D por las coordenadas adicionales.

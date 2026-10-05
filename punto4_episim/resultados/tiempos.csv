@@ -1,6 +1,6 @@
 escenario,replicas,segundos,segundos_por_replica,memoria_pico_MB
-sin_vacunacion,1000,202.37,0.2024,0.0
-con_vacunacion,1000,89.31,0.0893,0.0
-sin_vacunacion_homogenea,1000,182.71,0.1827,0.0
-con_vacunacion_homogenea,1000,62.39,0.0624,0.0
-sensibilidad,900,82.71,0.0919,0.0
+sin_vacunacion,1000,136.03,0.136,71.0
+con_vacunacion,1000,55.24,0.0552,123.8
+sin_vacunacion_homogenea,1000,102.34,0.1023,130.4
+con_vacunacion_homogenea,1000,31.48,0.0315,130.4
+sensibilidad,900,47.8,0.0531,130.4

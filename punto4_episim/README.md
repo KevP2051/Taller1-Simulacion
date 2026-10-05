@@ -10,8 +10,7 @@ generar resultados.
 
 - Python 3.10 o superior.
 - El paquete del punto 3 debe estar disponible desde la raíz del repositorio.
-- El análisis (`analisis_episim.py`) usa `numpy`, `pandas` y `matplotlib`. No requiere
-  `scipy`: la correlación de Spearman se calcula directamente sobre los rangos.
+- El análisis (`analisis_episim.py`) usa `numpy`, `pandas` y `matplotlib`.
 
 ```bash
 python -m pip install numpy pandas matplotlib
@@ -23,8 +22,8 @@ python -m pip install numpy pandas matplotlib
 |---|---|
 | Lenguaje | Python 3.14.0 (numpy, pandas, matplotlib 3.10.8) |
 | Sistema operativo | Windows 11 Pro 64 bits (versión 10.0.26200) |
-| Procesador | AMD Ryzen 7 5800XT, 8 núcleos y 16 hilos |
-| Memoria RAM | 16 GB |
+| Procesador | AMD Ryzen 5 5600X, 6 núcleos y 12 hilos |
+| Memoria RAM | 32 GB |
 
 ## Uso
 
@@ -167,7 +166,7 @@ con vacunación 3282.24.
 | `<escenario>_series.csv` | una fila por réplica y día: S, E, I, R y F (fallecidos acumulados, incluidos en R) |
 | `sensibilidad.csv` | caso base y cada parámetro en su mínimo y su máximo |
 | `tiempos.csv` | segundos por escenario y por réplica |
-| `validacion_generador.csv` | media, varianza y chi-cuadrado de 100.000 números del generador |
+| `validacion_generador.csv` resultados de medias, varianza, chi-cuadrado, Kolmogorov-Smirnov y póker sobre 100.000 números |
 | `estadisticas_descriptivas.csv` | media, desviación, IC 95 %, mínimo, cuartiles y máximo por escenario (lo crea el análisis) |
 | `correlaciones_spearman.csv` | correlación de cada parámetro con el total de infectados y con el pico (lo crea el análisis, sin `scipy`) |
 
@@ -380,12 +379,11 @@ percentiles 2.5 y 97.5 de las réplicas, que describen la variación entre répl
 
 ### Limitaciones de la implementación
 
-- `memoria_pico_MB` en `tiempos.csv` vale 0.0 en Windows, porque el módulo `resource`
-  solo existe en Linux.
+- En Windows, `memoria_pico_MB` usa el working set máximo del proceso mediante la API
+  nativa de Windows. En sistemas con `resource` se registra el RSS pico del proceso;
+  por ello, las cifras entre ambos métodos no son directamente comparables.
 - Con m par, R puede valer exactamente 1.0 cuando X = m − 1; el motor no protege los
   índices piso(R·n) frente a ese caso. Con la semilla por defecto no se alcanza ese valor.
-- `validate_generator` es una comprobación rápida del generador. Las pruebas completas
-  del generador se mantienen en `punto3_generadores_pseudoaleatorios`.
 
 ### Posibles mejoras
 

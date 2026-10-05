@@ -1,2 +1,6 @@
-n,media,media_teorica,varianza,varianza_teorica,chi2,chi2_critico_0.05_9gl,pasa_chi2
-100000,0.5008030634,0.5,0.08363188046398623,0.08333333333333333,7.3654,16.919,1
+n,prueba,estadistico,valor_critico,pasa,avisos
+100000,Medias,0.5008,1.95996,1,
+100000,Varianza,0.08363,100877.41092,1,
+100000,Chi-cuadrado,7.3654,16.91897,1,
+100000,Kolmogorov-Smirnov,0.0024,0.0043,1,
+100000,Póker,5.39933,12.59158,1,

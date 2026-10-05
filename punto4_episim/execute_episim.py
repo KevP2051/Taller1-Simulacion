@@ -4,8 +4,10 @@
 # =====================================================================
 import argparse
 import csv
+import ctypes
 import os
 import sys
+import tracemalloc
 import time
 
 try:
@@ -16,6 +18,7 @@ except ModuleNotFoundError:
 from .random import PseudorandomGenerator
 from .config import read_config
 from .runner import run_scenario
+from punto3_generadores_pseudoaleatorios import pruebas
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 CONFIG = os.path.join(BASE, "configuracion")
@@ -28,11 +31,44 @@ ESCENARIOS = {
     "con_vacunacion_homogenea": "config_con_vacunacion_homogenea.csv",
 }
 
+class _ProcessMemoryCounters(ctypes.Structure):
+    _fields_ = [
+        ("cb", ctypes.c_ulong),
+        ("page_fault_count", ctypes.c_ulong),
+        ("memory_values", ctypes.c_size_t * 8),
+    ]
+
+def _windows_peak_memory_mb() -> float:
+    """Devuelve el pico de memoria residente del proceso en Windows."""
+    counters = _ProcessMemoryCounters()
+    counters.cb = ctypes.sizeof(counters)
+    get_process = ctypes.windll.kernel32.GetCurrentProcess
+    get_process.restype = ctypes.c_void_p
+    get_memory_info = ctypes.windll.psapi.GetProcessMemoryInfo
+    get_memory_info.argtypes = (
+        ctypes.c_void_p,
+        ctypes.POINTER(_ProcessMemoryCounters),
+        ctypes.c_ulong,
+    )
+    get_memory_info.restype = ctypes.c_bool
+    if not get_memory_info(get_process(),
+                           ctypes.byref(counters), counters.cb):
+        raise ctypes.WinError()
+
+    return counters.memory_values[0] / (1024.0 ** 2)
+
 def peak_memory_mb() -> float:
     """Devuelve la memoria máxima aproximada del proceso en MB."""
-    if resource is not None:
-        return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0
-    return 0.0
+    if sys.platform == "win32":
+        return _windows_peak_memory_mb()
+    elif resource is not None:
+        peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        return peak / (1024.0 ** 2) if sys.platform == "darwin" else peak / 1024.0
+    else:
+        if not tracemalloc.is_tracing():
+            tracemalloc.start()
+        _, peak_bytes = tracemalloc.get_traced_memory()
+        return peak_bytes / (1024.0 ** 2)
 
 def save_summary(name: str, summaries: list[dict]) -> None:
     """Guarda el resumen de cada réplica."""
@@ -54,35 +90,32 @@ def save_series(name: str, series) -> None:
             for row in serie:
                 w.writerow((r,) + row)
 
-def validate_generator(seed: int,n: int = 100_000,bins: int = 10,) -> dict:
-    """Chequeo rapido del flujo U(0,1): media, varianza y chi-cuadrado."""
+def validate_generator(
+    seed: int,
+    n: int = 100_000,
+    bins: int = 10,
+) -> list[dict]:
+    """Valida el generador con las pruebas del punto 3."""
     gen = PseudorandomGenerator(seed)
-    xs = [gen.next() for _ in range(n)]
-    media = sum(xs) / n
-    var = sum((x - media) ** 2 for x in xs) / (n - 1)
-    observed = [0] * bins
-    for x in xs: observed[int(x * bins)] += 1
-
-    expected = n / bins
-    chi2 = sum(
-        (observed_count - expected) ** 2 / expected
-        for observed_count in observed
+    numbers = [gen.next() for _ in range(n)]
+    tests = (
+        pruebas.prueba_de_medias(numbers),
+        pruebas.prueba_de_varianza(numbers),
+        pruebas.prueba_chi_cuadrado(numbers, bins),
+        pruebas.prueba_kolmogorov_smirnov(numbers, bins),
+        pruebas.prueba_de_poker(numbers),
     )
-    
-    critical_value = 16.919
-    return {
+    return [{
         "n": n,
-        "media": media,
-        "media_teorica": 0.5,
-        "varianza": var,
-        "varianza_teorica": 1 / 12,
-        "chi2": chi2,
-        "chi2_critico_0.05_9gl": critical_value,
-        "pasa_chi2": int(chi2 < critical_value),
-    }
+        "prueba": result["prueba"],
+        "estadistico": result["estadistico"],
+        "valor_critico": result["valor_critico"],
+        "pasa": int(result["pasa"]),
+        "avisos": " | ".join(result["avisos"]),
+    } for result in tests]
     
-def save_generator_validation(seed: int) -> dict:
-    """Ejecuta y guarda la validación del generador."""
+def save_generator_validation(seed: int) -> list[dict]:
+    """Ejecuta y guarda los resultados de la validación del generador."""
     result = validate_generator(seed)
 
     with open(
@@ -91,9 +124,9 @@ def save_generator_validation(seed: int) -> dict:
         newline="",
         encoding="utf-8",
     ) as f:
-        writer = csv.DictWriter(f, fieldnames=list(result.keys()))
+        writer = csv.DictWriter(f, fieldnames=list(result[0].keys()))
         writer.writeheader()
-        writer.writerow(result)
+        writer.writerows(result)
 
     return result
 

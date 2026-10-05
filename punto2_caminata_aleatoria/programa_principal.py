@@ -50,7 +50,7 @@ def elegir_semillas():
 
 def validar_generador(semilla):
     # Ejecuta las pruebas estadísticas del generador antes de la simulación.
-    # Los resultados permiten verificar uniformidad e independencia aproximada.
+    # Los resultados permiten verificar la uniformidad.
     # Pruebas del Punto 3 sobre los números de la primera réplica, antes de simular
     numeros_r = caminata.generar_numeros(semilla, PASOS)
     intervalos = pruebas.cantidad_de_intervalos_por_defecto(len(numeros_r))

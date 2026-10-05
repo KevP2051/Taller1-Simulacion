@@ -50,6 +50,7 @@ congruencial_multiplicativo,597509435,,16807,,2147483647,1000
 congruencial_lineal,555555555,,1664525,1013904223,4294967296,1000
 ```
 
+El archivo de ejemplo [`semillas_ejemplo.csv`](semillas_ejemplo.csv) contiene estas filas.
 Son los cuatro generadores evaluados en el informe: G1 (cuadrados medios), G2 (ejemplo
 de congruencial lineal), G3 (generador del punto 2) y G4 (generador del punto 4).
 
@@ -78,20 +79,34 @@ numeros_uniformes = secuencia["numeros_r"]
 resultado = pruebas.prueba_chi_cuadrado(numeros_uniformes, 32)
 ```
 
+## Archivos
+
+| Archivo | Contenido |
+|---|---|
+| `generadores.py` | métodos de generación y transformaciones a uniforme y normal |
+| `pruebas.py` | pruebas estadísticas de validación |
+| `inicializacion.py` | lectura y validación del archivo de semillas |
+| `reportes.py` | tablas, exportación a CSV y gráficos |
+| `programa_principal.py` | ventana del programa |
+| `semillas_ejemplo.csv` | archivo de ejemplo con semillas para la carga externa |
+
 ## Funciones
 
 ### generadores.py (rutinas de biblioteca)
 
-| Función | Parámetros | Retorno |
-|---|---|---|
-| `generar_cuadrados_medios` | `semilla`, `cantidad_de_digitos` (par), `cantidad_de_numeros` | secuencia |
-| `generar_congruencial_lineal` | `semilla`, `multiplicador_a`, `incremento_c`, `modulo_m`, `cantidad_de_numeros` | secuencia con verificación de Hull-Dobell |
-| `generar_congruencial_multiplicativo` | `semilla`, `multiplicador_a`, `modulo_m`, `cantidad_de_numeros` | secuencia |
-| `verificar_hull_dobell` | `multiplicador_a`, `incremento_c`, `modulo_m` | diccionario con las tres condiciones y `cumple` |
-| `transformar_a_uniforme` | `numeros_r`, `limite_inferior`, `limite_superior` | lista de N_i = a + (b − a)·R_i |
-| `transformar_a_normal_estandar` | `numeros_r` | diccionario con `numeros_normales` y `avisos` |
-| `normalizar_con_modulo` | `valor_x`, `modulo_m` | R_i según la paridad de m, truncado |
-| `truncar_a_cinco_decimales` | `valor` | valor truncado a cinco decimales |
+| Función | Descripción | Parámetros | Retorno |
+|---|---|---|---|
+| `generar_cuadrados_medios` | Genera números con el método de cuadrados medios | `semilla`, `cantidad_de_digitos` (par), `cantidad_de_numeros` | secuencia |
+| `generar_congruencial_lineal` | Genera números con X(i+1) = (a·X(i) + c) mod m | `semilla`, `multiplicador_a`, `incremento_c`, `modulo_m`, `cantidad_de_numeros` | secuencia con verificación de Hull-Dobell |
+| `generar_congruencial_multiplicativo` | Genera números con X(i+1) = (a·X(i)) mod m | `semilla`, `multiplicador_a`, `modulo_m`, `cantidad_de_numeros` | secuencia |
+| `generar_congruencial` | Base común de los dos métodos congruenciales | `metodo`, `etiqueta`, `semilla`, `multiplicador_a`, `incremento_c`, `modulo_m`, `cantidad_de_numeros` | secuencia |
+| `verificar_hull_dobell` | Revisa las tres condiciones de Hull-Dobell para período completo | `multiplicador_a`, `incremento_c`, `modulo_m` | diccionario con las tres condiciones y `cumple` |
+| `obtener_factores_primos` | Devuelve los factores primos distintos de un número | `numero` | lista de factores primos |
+| `transformar_a_uniforme` | Pasa los R_i a una uniforme entre a y b | `numeros_r`, `limite_inferior`, `limite_superior` | lista de N_i = a + (b − a)·R_i |
+| `transformar_a_normal_estandar` | Pasa los R_i a una normal estándar con Box-Muller | `numeros_r` | diccionario con `numeros_normales` y `avisos` |
+| `normalizar_con_modulo` | Convierte X_i en R_i entre 0 y 1 | `valor_x`, `modulo_m` | R_i según la paridad de m, truncado |
+| `truncar_a_cinco_decimales` | Corta un número a cinco decimales sin redondear | `valor` | valor truncado |
+| `truncar_cociente_a_cinco_decimales` | Divide dos enteros y corta el resultado a cinco decimales | `numerador`, `denominador` | cociente truncado |
 
 Una secuencia es un diccionario con `metodo`, `etiqueta`, `parametros`, `valores_x`
 (X_i), `numeros_r` (R_i), `periodo` (posición en que un congruencial vuelve a la
@@ -99,44 +114,58 @@ semilla), `hull_dobell` y `avisos` (colapso a cero, ciclo, período o pares omit
 
 ### pruebas.py (rutinas de biblioteca)
 
-| Función | Parámetros | Retorno |
-|---|---|---|
-| `prueba_de_medias` | `numeros_r` | resultado con la media, el intervalo 0.5 ± Z·√(1/12)/√n y las medias por bloque |
-| `prueba_de_varianza` | `numeros_r` | resultado con la varianza muestral (n − 1), su intervalo de aceptación y las varianzas por bloque |
-| `prueba_chi_cuadrado` | `numeros_r`, `cantidad_de_intervalos` | resultado con frecuencias observadas por intervalo y frecuencia esperada |
-| `prueba_kolmogorov_smirnov` | `numeros_r`, `cantidad_de_intervalos` | resultado con S(x), F(x), diferencias, DMAX y DMAXP |
-| `prueba_de_poker` | `numeros_r` | resultado con frecuencias observadas y esperadas por mano |
-| `valor_critico_kolmogorov_smirnov` | `cantidad_de_numeros` | DMAXP de la tabla de Kolmogorov-Smirnov (α = 0.05): valor tabulado si n ≤ 50, 1.36/√n si n > 50 |
-| `valor_critico_chi_cuadrado` | `probabilidad_acumulada`, `grados_de_libertad` | valor crítico chi-cuadrado truncado |
-| `probabilidad_acumulada_chi_cuadrado` | `valor_x`, `grados_de_libertad` | P(χ² ≤ x), mediante la función gamma incompleta regularizada |
-| `cantidad_de_intervalos_por_defecto` | `cantidad_de_numeros` | k = √n redondeado (mínimo 2) |
-| `dividir_en_bloques` | `numeros_r` | lista de bloques consecutivos de igual tamaño |
-| `calcular_limites_de_medias` | `cantidad_de_numeros` | (LI, LS) de la prueba de medias |
-| `calcular_varianza` | `numeros_r` | varianza muestral con n − 1 |
-| `calcular_limites_de_varianza` | `cantidad_de_numeros` | (χ² inferior, χ² superior, LI, LS) de la prueba de varianza |
+| Función | Descripción | Parámetros | Retorno |
+|---|---|---|---|
+| `prueba_de_medias` | Prueba de medias | `numeros_r` | resultado con la media, el intervalo 0.5 ± Z·√(1/12)/√n y las medias por bloque |
+| `prueba_de_varianza` | Prueba de varianza | `numeros_r` | resultado con la varianza muestral (n − 1), su intervalo de aceptación y las varianzas por bloque |
+| `prueba_chi_cuadrado` | Prueba chi-cuadrado de uniformidad | `numeros_r`, `cantidad_de_intervalos` | resultado con frecuencias observadas por intervalo y frecuencia esperada |
+| `prueba_kolmogorov_smirnov` | Prueba de Kolmogorov-Smirnov | `numeros_r`, `cantidad_de_intervalos` | resultado con S(x), F(x), diferencias, DMAX y DMAXP |
+| `prueba_de_poker` | Prueba de póker | `numeros_r` | resultado con frecuencias observadas y esperadas por mano |
+| `clasificar_mano_de_poker` | Dice qué mano forman los cinco decimales de un número | `numero_r` | símbolo de la mano (D, O, T, K, F, P o Q) |
+| `valor_critico_kolmogorov_smirnov` | Calcula DMAXP para α = 0.05 | `cantidad_de_numeros` | valor tabulado si n ≤ 50, 1.36/√n si n > 50 |
+| `valor_critico_chi_cuadrado` | Calcula el valor crítico chi-cuadrado | `probabilidad_acumulada`, `grados_de_libertad` | valor crítico truncado |
+| `probabilidad_acumulada_chi_cuadrado` | Calcula P(χ² ≤ x) con la función gamma incompleta regularizada | `valor_x`, `grados_de_libertad` | probabilidad |
+| `calcular_estadistico_chi_cuadrado` | Calcula Σ(O − E)²/E | `frecuencias_observadas`, `frecuencias_esperadas` | estadístico truncado |
+| `contar_frecuencias_por_intervalo` | Cuenta cuántos números caen en cada intervalo de [0, 1) | `numeros_r`, `cantidad_de_intervalos` | lista de frecuencias |
+| `obtener_limites_de_intervalos` | Devuelve los límites de cada intervalo | `cantidad_de_intervalos` | lista de pares (inicio, fin) |
+| `cantidad_de_intervalos_por_defecto` | Calcula cuántos intervalos usar por defecto | `cantidad_de_numeros` | k = √n redondeado (mínimo 2) |
+| `dividir_en_bloques` | Parte la secuencia en bloques consecutivos | `numeros_r` | lista de bloques de igual tamaño |
+| `calcular_limites_de_medias` | Calcula los límites de aceptación de la media | `cantidad_de_numeros` | (LI, LS) |
+| `calcular_varianza` | Calcula la varianza muestral | `numeros_r` | varianza con n − 1 |
+| `calcular_limites_de_varianza` | Calcula los límites de aceptación de la varianza | `cantidad_de_numeros` | (χ² inferior, χ² superior, LI, LS) |
 
 Un resultado es un diccionario con `prueba`, `estadistico`, `valor_critico`, `pasa`,
 `avisos` y los datos de su gráfico.
 
 ### inicializacion.py (rutina de inicialización)
 
-| Función | Parámetros | Retorno |
-|---|---|---|
-| `validar_fila_de_semilla` | diccionario con `metodo`, `semilla`, `digitos`, `a`, `c`, `m`, `cantidad` | (fila con enteros, lista de errores) |
-| `leer_archivo_de_semillas` | `ruta_del_archivo` (.csv o .txt, separado por comas o punto y coma) | (filas válidas, errores con número de fila) |
+| Función | Descripción | Parámetros | Retorno |
+|---|---|---|---|
+| `leer_archivo_de_semillas` | Lee las semillas desde un archivo .txt o .csv | `ruta_del_archivo` (separado por comas o punto y coma) | (filas válidas, errores con número de fila) |
+| `validar_fila_de_semilla` | Revisa que una fila tenga los datos que pide su método | diccionario con `metodo`, `semilla`, `digitos`, `a`, `c`, `m`, `cantidad` | (fila con enteros, lista de errores) |
+| `convertir_campos_a_enteros` | Convierte a entero los campos de una fila | `fila`, `campos` | (fila convertida, lista de errores) |
 
 ### reportes.py (generador de reportes)
 
-| Función | Parámetros | Retorno |
-|---|---|---|
-| `crear_histograma_de_secuencia` | `secuencia` | figura con un histograma por distribución (R_i, U(a, b), normal) |
-| `crear_grafico_de_medias` | lista de resultados | histograma de las medias por bloque con su intervalo de aceptación, la media teórica y la media de la secuencia, un panel por método |
-| `crear_grafico_de_varianzas` | lista de resultados | histograma de las varianzas por bloque con su intervalo de aceptación, la varianza teórica y la varianza de la secuencia, un panel por método |
-| `crear_grafico_chi_cuadrado` | lista de resultados | figura de barras observadas vs esperadas, un panel por método |
-| `crear_grafico_kolmogorov_smirnov` | lista de resultados | figura de S(x) empírica vs F(x) = x con DMAX resaltado, un panel por método |
-| `crear_grafico_de_poker` | lista de resultados | figura de manos observadas vs esperadas, un panel por método |
-| `exportar_secuencia_a_csv` | `secuencia`, `ruta_del_archivo` | archivo con las columnas i, X_i, R_i, N_i y Z_i |
-| `describir_secuencia` | `secuencia` | texto con parámetros, Hull-Dobell y avisos |
+| Función | Descripción | Parámetros | Retorno |
+|---|---|---|---|
+| `crear_histograma_de_secuencia` | Crea el histograma de frecuencias de una secuencia | `secuencia` | figura con un histograma por distribución (R_i, U(a, b), normal) |
+| `crear_grafico_de_medias` | Crea el gráfico de la prueba de medias | lista de resultados | histograma de las medias por bloque con su intervalo de aceptación, la media teórica y la media de la secuencia, un panel por método |
+| `crear_grafico_de_varianzas` | Crea el gráfico de la prueba de varianza | lista de resultados | histograma de las varianzas por bloque con su intervalo de aceptación, la varianza teórica y la varianza de la secuencia, un panel por método |
+| `crear_grafico_de_distribucion_por_bloques` | Base común de los gráficos de medias y varianzas | `resultados`, `titulo`, `nombre_del_estadistico`, `nombre_del_valor_esperado` | figura |
+| `crear_grafico_chi_cuadrado` | Crea el gráfico de la prueba chi-cuadrado | lista de resultados | figura de barras observadas vs esperadas, un panel por método |
+| `crear_grafico_kolmogorov_smirnov` | Crea el gráfico de la prueba de Kolmogorov-Smirnov | lista de resultados | figura de S(x) empírica vs F(x) = x con DMAX resaltado, un panel por método |
+| `crear_grafico_de_poker` | Crea el gráfico de la prueba de póker | lista de resultados | figura de manos observadas vs esperadas, un panel por método |
+| `dibujar_barras_observadas_contra_esperadas` | Dibuja barras de frecuencias observadas y esperadas en un panel | `panel`, `nombres_de_las_barras`, `frecuencias_observadas`, `frecuencias_esperadas` | ninguno |
+| `crear_figura_con_paneles` | Crea una figura con varios paneles en cuadrícula | `cantidad_de_paneles`, `titulo` | (figura, paneles) |
+| `exportar_secuencia_a_csv` | Guarda una secuencia en un archivo CSV | `secuencia`, `ruta_del_archivo` | archivo con las columnas i, X_i, R_i, N_i y Z_i |
+| `describir_secuencia` | Escribe un resumen de la secuencia | `secuencia` | texto con parámetros, Hull-Dobell y avisos |
+| `describir_resultado` | Escribe el resultado de una prueba | `resultado` | texto con estadístico, criterio y decisión |
+| `describir_criterio` | Escribe el criterio de aceptación de una prueba | `resultado` | intervalo o valor crítico como texto |
+| `obtener_columnas_de_secuencia` | Arma las columnas de la tabla de una secuencia | `secuencia` | diccionario {columna: valores} |
+| `obtener_filas_de_secuencia` | Arma las filas de la tabla de una secuencia | `secuencia` | (encabezados, filas) |
+| `formatear_valor` | Escribe un valor con cinco decimales si es decimal | `valor` | texto |
+| `acortar_etiqueta` | Parte una etiqueta larga en varias líneas | `etiqueta` | texto |
 
 Las figuras son objetos `matplotlib.figure.Figure`; fuera de la ventana se guardan con
 `figura.savefig("archivo.png")`.
@@ -145,6 +174,34 @@ Las figuras son objetos `matplotlib.figure.Figure`; fuera de la ventana se guard
 
 Construye la ventana y coordina la inicialización, las rutinas de biblioteca y el
 generador de reportes.
+
+| Función | Descripción |
+|---|---|
+| `iniciar_programa` | Abre el programa |
+| `crear_ventana_principal` | Crea la ventana principal |
+| `crear_marco_de_generacion` | Crea la parte de la ventana para elegir el método y generar |
+| `crear_marco_de_secuencias` | Crea la parte de la ventana con la lista de secuencias |
+| `crear_marco_de_tabla` | Crea la parte de la ventana con la tabla de la secuencia |
+| `crear_marco_de_pruebas` | Crea la parte de la ventana para elegir y ejecutar las pruebas |
+| `generar_desde_campos` | Genera una secuencia con los datos escritos a mano |
+| `cargar_archivo_de_semillas` | Carga un archivo de semillas y genera sus secuencias |
+| `generar_secuencia_desde_fila` | Genera la secuencia que pide una fila |
+| `agregar_secuencia` | Genera una secuencia, le aplica las transformaciones y la guarda en la lista |
+| `leer_fila_de_campos` | Lee los datos escritos en la ventana |
+| `leer_opciones_de_transformacion` | Lee qué transformaciones (uniforme, normal) se eligieron |
+| `leer_cantidad_de_intervalos` | Lee la cantidad de intervalos escrita |
+| `actualizar_campos_habilitados` | Activa solo los campos del método elegido |
+| `actualizar_lista_de_secuencias` | Refresca la lista de secuencias generadas |
+| `obtener_indice_elegido` | Devuelve la secuencia elegida en la lista |
+| `mostrar_secuencia_elegida` | Muestra la tabla y el resumen de la secuencia elegida |
+| `exportar_secuencia_elegida` | Guarda la secuencia elegida en un archivo CSV |
+| `quitar_secuencia_elegida` | Borra la secuencia elegida de la lista |
+| `ejecutar_pruebas_elegidas` | Corre las pruebas elegidas sobre las secuencias |
+| `ejecutar_y_graficar_pruebas` | Corre las pruebas elegidas y muestra sus gráficos |
+| `mostrar_histograma_elegido` | Muestra el histograma de la secuencia elegida |
+| `mostrar_grafico_elegido` | Dibuja en la ventana el gráfico elegido |
+| `mostrar_grafico_de_la_fila_elegida` | Muestra el gráfico de la prueba elegida en el resumen |
+| `publicar_graficos` | Agrega gráficos nuevos a la lista y muestra uno |
 
 ## Decisiones de diseño
 
@@ -317,3 +374,37 @@ La prueba se aplica sobre los k intervalos:
    - n ≤ 50: valor tabulado (por ejemplo, n = 20 → 0.29408 y n = 50 → 0.18841).
    - n > 50: DMAXP = 1.36 / √n (por ejemplo, n = 1000 → 0.04300).
 7. La secuencia pasa la prueba si DMAX < DMAXP.
+
+## Limitaciones
+
+- **Cuadrados medios:** el método degenera con facilidad. Muchas semillas colapsan a cero
+  o entran en un ciclo corto; en ese caso la generación se detiene y la secuencia queda
+  con menos números de los pedidos (el sistema lo advierte).
+- **Período de los congruenciales:** ningún congruencial supera m números distintos. En
+  el lineal, el período completo solo está garantizado si se cumple Hull-Dobell; en el
+  multiplicativo el período máximo es m − 1. El período se detecta únicamente cuando la
+  secuencia vuelve a la semilla.
+- **Resolución de cinco decimales:** al truncar, los R_i solo pueden tomar 100.000
+  valores distintos, aunque m sea mucho mayor. Con m par, R_i = X_i / (m − 1) puede valer
+  1.0.
+- **Sin prueba de independencia:** las cinco pruebas evalúan uniformidad, media y
+  varianza. Al no implementarse la prueba de rachas, una secuencia con dependencia entre
+  números consecutivos (por ejemplo, ordenada de forma creciente) puede aprobarlas.
+- **Kolmogorov-Smirnov por intervalos:** la prueba compara las frecuencias acumuladas de
+  los k intervalos y no cada número por separado, por lo que pierde sensibilidad frente
+  a desviaciones dentro de un intervalo.
+- **Validez de chi-cuadrado y póker:** con pocos números la frecuencia esperada de un
+  intervalo o de una mano puede ser menor que 5. El sistema lo advierte, pero igual
+  entrega la decisión.
+- **Nivel de significancia fijo:** todas las pruebas usan α = 0.05; no se puede cambiar
+  desde la ventana.
+- **Solo se validan los R_i:** las secuencias U(a, b) y normales no pasan por las
+  pruebas, solo se muestran en su histograma.
+- **Normal estándar únicamente:** se genera N(0, 1); para otra media μ y desviación σ se
+  debe aplicar μ + σ·Z fuera del módulo. Box-Muller omite los pares con R₁ = 0 y el último
+  número cuando la cantidad es impar.
+- **Bloques de medias y varianzas:** los números que sobran al dividir la secuencia en
+  bloques no entran en el gráfico de distribución.
+- **Rendimiento:** todo está escrito en Python puro y las secuencias se guardan completas
+  en listas, por lo que secuencias de millones de números tardan varios segundos y
+  ocupan memoria proporcional a su tamaño.

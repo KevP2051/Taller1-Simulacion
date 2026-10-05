@@ -125,7 +125,9 @@ generador de reportes.
 ### Precisión
 
 Todos los números se trabajan con cinco posiciones decimales, por truncamiento
-(0.834219 → 0.83421).
+(0.834219 → 0.83421). Antes de truncar un valor decimal se redondea a diez decimales para
+eliminar el error de representación de la coma flotante (por ejemplo, 0.22 − 0.20 da
+0.019999999999999997 y debe truncarse como 0.02000).
 
 ### Normalización de los generadores
 

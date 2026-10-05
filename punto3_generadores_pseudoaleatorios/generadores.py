@@ -3,7 +3,7 @@ from decimal import Decimal, ROUND_DOWN
 
 
 def truncar_a_cinco_decimales(valor):
-    return float(Decimal(repr(valor)).quantize(Decimal("0.00001"), rounding=ROUND_DOWN))
+    return float(Decimal(repr(round(valor, 10))).quantize(Decimal("0.00001"), rounding=ROUND_DOWN))
 
 
 def truncar_cociente_a_cinco_decimales(numerador, denominador):

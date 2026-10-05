@@ -1,4 +1,4 @@
-# Punto 4: EpiSim, simulación Monte Carlo de propagación de enfermedades contagiosas
+# Punto 4: EpiSim, simulación Montecarlo de propagación de enfermedades contagiosas
 
 Simulación Montecarlo de un modelo SEIR modificado con vacunación sobre una población
 de 10.000 individuos, durante 365 días y con 1.000 réplicas por escenario. Toda la
@@ -25,6 +25,9 @@ python -m pip install numpy pandas matplotlib
 | Procesador | AMD Ryzen 5 5600X, 6 núcleos y 12 hilos |
 | Memoria RAM | 32 GB |
 
+Los tiempos de `resultados/tiempos.csv` corresponden a este equipo: la ejecución completa
+(4.900 réplicas) tomó 372.89 s.
+
 ## Uso
 
 Los comandos recomendados se ejecutan desde la raíz del repositorio, siempre en este orden:
@@ -37,11 +40,8 @@ python -m punto4_episim.analisis_episim # genera gráficos y tablas
 El segundo paso no simula: solo lee los archivos del primero, por lo que puede repetirse
 sin volver a correr la simulación.
 
-También es posible ejecutar el análisis directamente desde `punto4_episim`:
-
-```bash
-python analisis_episim.py
-```
+Ninguno de los dos programas admite la ejecución directa desde `punto4_episim` (por
+ejemplo, `python analisis_episim.py`): deben lanzarse con `python -m` desde la raíz.
 
 ### Argumentos de `execute_episim.py`
 
@@ -57,6 +57,9 @@ Prueba rápida (menos de un minuto):
 python -m punto4_episim.execute_episim --replicas 20 --rep-sensibilidad 5
 python -m punto4_episim.analisis_episim
 ```
+
+Esta prueba sobrescribe los archivos de `resultados/` y de `graficos/`. Para recuperar
+los resultados de 1.000 réplicas hay que repetir los dos comandos de *Uso* sin argumentos.
 
 ## Archivos
 
@@ -165,8 +168,8 @@ con vacunación 3282.24.
 | `<escenario>_resumen.csv` | una fila por réplica: semilla, parámetros sorteados, pico, día del pico, total de infectados, tasa de ataque, muertes y día de control |
 | `<escenario>_series.csv` | una fila por réplica y día: S, E, I, R y F (fallecidos acumulados, incluidos en R) |
 | `sensibilidad.csv` | caso base y cada parámetro en su mínimo y su máximo |
-| `tiempos.csv` | segundos por escenario y por réplica |
-| `validacion_generador.csv` resultados de medias, varianza, chi-cuadrado, Kolmogorov-Smirnov y póker sobre 100.000 números |
+| `tiempos.csv` | segundos por escenario y por réplica, y memoria pico del proceso en MB |
+| `validacion_generador.csv` | resultados de medias, varianza, chi-cuadrado, Kolmogorov-Smirnov y póker sobre 100.000 números |
 | `estadisticas_descriptivas.csv` | media, desviación, IC 95 %, mínimo, cuartiles y máximo por escenario (lo crea el análisis) |
 | `correlaciones_spearman.csv` | correlación de cada parámetro con el total de infectados y con el pico (lo crea el análisis, sin `scipy`) |
 
@@ -189,7 +192,7 @@ con vacunación 3282.24.
 | Función | Descripción | Parámetros | Retorno |
 |---|---|---|---|
 | `PseudorandomGenerator` | Entrega uno a uno los números del congruencial lineal del punto 3, pedidos en bloques de 256 | `seed`, `a`, `c`, `m`, `batch_size` | objeto con `next()` y `state` |
-| `PseudorandomGenerator.next` | Devuelve el siguiente número R en [0, 1) | — | R |
+| `PseudorandomGenerator.next` | Devuelve el siguiente número R en [0, 1] (vale 1 solo si X = m − 1) | — | R |
 | `uniform` | Transforma R en un valor de U(low, high) | `gen`, `low`, `high` | low + (high − low)·R |
 | `sample_duration` | Sortea una duración en días y la redondea al entero más cercano | `gen`, `low`, `high` | días |
 
@@ -238,13 +241,13 @@ con vacunación 3282.24.
 |---|---|
 | `main` | Lee los argumentos y coordina validación, escenarios, sensibilidad y tiempos |
 | `parse_args` | Lee `--replicas`, `--semilla` y `--rep-sensibilidad` |
-| `validate_generator` | Calcula media, varianza y chi-cuadrado (10 intervalos) de 100.000 números |
+| `validate_generator` | Aplica a 100.000 números las cinco pruebas del punto 3 (chi-cuadrado y Kolmogorov-Smirnov con 10 intervalos) |
 | `save_generator_validation` | Guarda la validación en `validacion_generador.csv` |
 | `sensitivity_analysis` | Corre el caso base y los ocho casos mínimo/máximo con una secuencia continua del generador |
 | `save_summary` | Guarda el resumen por réplica de un escenario |
 | `save_series` | Guarda la serie diaria de cada réplica de un escenario |
 | `save_times` | Guarda los tiempos y la memoria en `tiempos.csv` |
-| `peak_memory_mb` | Memoria pico del proceso (solo disponible en Linux) |
+| `peak_memory_mb` | Memoria pico del proceso: API de Windows, o módulo `resource` en Linux y macOS |
 
 ### analisis_episim.py (generador de reportes)
 
@@ -268,7 +271,7 @@ con vacunación 3282.24.
 | `State` | estados S, E, I y R de cada individuo |
 | `ReplicaParams` | parámetros fijos y sorteados de una réplica (inmutable) |
 | `DailyRecord` | S, E, I, R y F al cierre de un día |
-| `UniformSource` | contrato de cualquier fuente de números U[0, 1): `next()` y `state` |
+| `UniformSource` | contrato de cualquier fuente de números uniformes en [0, 1]: `next()` y `state` |
 | `Config` | diccionario `{parametro: (min, max)}` leído del CSV |
 
 Dentro de la simulación, el estado de cada individuo se guarda en una lista indexada por
@@ -279,7 +282,7 @@ transiciones futuras, en diccionarios `{día: [individuos]}`.
 
 ### Número de contactos
 
-El enunciado propone contactos = piso(r × β_máximo). Como r < 1 y β ≤ 0.5, esa expresión
+El enunciado propone contactos = piso(r × β_máximo). Como r ≤ 1 y β ≤ 0.5, esa expresión
 siempre da cero y la enfermedad no se propagaría. Se reemplazó por una Binomial(k, β/k)
 con k = 4, generada por transformada inversa con un solo número: conserva β como promedio
 de contactos por infectado y por día, y limita el máximo a k.
@@ -342,8 +345,9 @@ percentiles 2.5 y 97.5 de las réplicas, que describen la variación entre répl
 ### Validez de los supuestos
 
 - **Número reproductivo básico.** Sin vacunación, cada infectado produce en promedio
-  R₀ ≈ β·p·(1/γ) contagios. Con los rangos del enunciado, R₀ va de 0.3·0.4·7 = 0.84 a
-  0.5·0.6·14 = 4.2, con valor central 0.4·0.5·10.5 = 2.1, un orden de magnitud propio de
+  R₀ ≈ β·p·(1/γ) contagios, donde 1/γ = 10.5 días es la media del período infeccioso
+  (se sortea por individuo). Con los rangos del enunciado, R₀ va de 0.3·0.4·10.5 = 1.26 a
+  0.5·0.6·10.5 = 3.15, con valor central 0.4·0.5·10.5 = 2.1, un orden de magnitud propio de
   enfermedades respiratorias. En mezcla homogénea, un R₀ de 2.1 predice que se infecta
   cerca del 80 % de la población; el escenario `sin_vacunacion_homogenea` da un total
   medio de 7921 infectados (79 %), coherente con ese valor.
@@ -356,8 +360,9 @@ percentiles 2.5 y 97.5 de las réplicas, que describen la variación entre répl
   el resultado depende mucho del sorteo: el 38 % de las réplicas no llega a un brote mayor
   y la distribución del total de infectados es muy dispersa.
 - **Parámetros añadidos.** `contactos_maximos_k`, `letalidad` y `umbral_control` no
-  vienen del enunciado; son supuestos del grupo y cambian las muertes y el día de control,
-  pero no la dinámica del contagio.
+  vienen del enunciado; son supuestos del grupo. `letalidad` y `umbral_control` cambian
+  las muertes y el día de control, pero no la dinámica del contagio; `contactos_maximos_k`
+  no altera el promedio de contactos (β), solo su varianza, β(1 − β/k).
 
 ### Limitaciones del modelo
 

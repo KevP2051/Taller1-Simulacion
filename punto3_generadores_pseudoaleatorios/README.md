@@ -7,6 +7,15 @@ y póker). Por indicación del docente no se implementan la prueba de rachas ni 
 generador congruencial aditivo. Es la fuente de aleatoriedad de los puntos 2 (caminata aleatoria)
 y 4 (EpiSim) del taller.
 
+## Requisitos
+
+- Python 3.10 o superior, con `tkinter` (incluido en el instalador de Python para Windows).
+- `matplotlib` 3.5 o superior, solo para los gráficos.
+
+```bash
+python -m pip install matplotlib
+```
+
 ## Uso
 
 El programa se ejecuta desde la carpeta raíz del taller:

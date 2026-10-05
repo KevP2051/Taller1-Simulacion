@@ -140,7 +140,7 @@ la misma forma.
 
 | Archivo | Contenido |
 |---|---|
-| `histograma_1d.png` | histograma de las posiciones finales en 1D con la densidad N(0, n) |
+| `histograma_1d.png` | histograma de frecuencias de las posiciones finales en 1D normal N(0, n) |
 | `trayectoria_1d.png` | posición contra paso de una caminata de 10.000 pasos |
 | `trayectoria_2d.png` | recorrido de una caminata de 10.000 pasos en el plano |
 | `posiciones_finales_2d.png` | dispersión (scatter) de las 100 posiciones finales en 2D |

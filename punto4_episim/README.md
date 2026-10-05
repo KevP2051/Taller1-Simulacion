@@ -17,6 +17,15 @@ generar resultados.
 python -m pip install numpy pandas matplotlib
 ```
 
+### Equipo de desarrollo y pruebas
+
+| Elemento | Especificación |
+|---|---|
+| Lenguaje | Python 3.14.0 (numpy, pandas, matplotlib 3.10.8) |
+| Sistema operativo | Windows 11 Pro 64 bits (versión 10.0.26200) |
+| Procesador | AMD Ryzen 7 5800XT, 8 núcleos y 16 hilos |
+| Memoria RAM | 16 GB |
+
 ## Uso
 
 Los comandos recomendados se ejecutan desde la raíz del repositorio, siempre en este orden:
@@ -176,41 +185,96 @@ con vacunación 3282.24.
 
 ## Funciones
 
-### Módulos de simulación
+### random.py (integración con el punto 3)
 
-| Función | Parámetros | Retorno |
-|---|---|---|
-| `PseudorandomGenerator` (`random.py`) | `seed`, `a`, `c`, `m` | objeto con `next()` y `state` |
-| `read_config` (`config.py`) | `path` | diccionario `{parametro: (min, max)}` |
-| `sample_params` (`config.py`) | `config`, `gen` | `ReplicaParams` |
-| `build_contact_cdf` (`structures.py`) | `beta`, `k` | CDF de Binomial(k, β/k) |
-| `sample_contact_count` (`structures.py`) | `gen`, `cdf` | número de contactos |
-| `simulate_epidemic` (`simulation.py`) | `params`, `gen` | lista de `DailyRecord` |
-| `EpidemicSimulation.run` (`simulation.py`) | — | serie diaria S, E, I, R y F |
-| `summarize_replica` (`runner.py`) | `records`, `params`, `initial_seed` | métricas de una réplica |
-| `run_scenario` (`runner.py`) | `config`, `semilla_base`, `n_replicas`, `gen`, `overwrite`, `verbose` | resúmenes, series y segundos |
+| Función | Descripción | Parámetros | Retorno |
+|---|---|---|---|
+| `PseudorandomGenerator` | Entrega uno a uno los números del congruencial lineal del punto 3, pedidos en bloques de 256 | `seed`, `a`, `c`, `m`, `batch_size` | objeto con `next()` y `state` |
+| `PseudorandomGenerator.next` | Devuelve el siguiente número R en [0, 1) | — | R |
+| `uniform` | Transforma R en un valor de U(low, high) | `gen`, `low`, `high` | low + (high − low)·R |
+| `sample_duration` | Sortea una duración en días y la redondea al entero más cercano | `gen`, `low`, `high` | días |
+
+### config.py
+
+| Función | Descripción | Parámetros | Retorno |
+|---|---|---|---|
+| `read_config` | Lee un escenario desde CSV y revisa que no falten parámetros | `path` | diccionario `{parametro: (min, max)}` |
+| `sample_params` | Sortea los cinco parámetros aleatorios de una réplica | `config`, `gen` | `ReplicaParams` |
+
+### structures.py
+
+| Función | Descripción | Parámetros | Retorno |
+|---|---|---|---|
+| `IndexedPool` | Conjunto de individuos que permite agregar, quitar y elegir por posición en O(1) | `items` | objeto con `add`, `remove`, `pick` |
+| `IndexedPool.pick` | Elige un individuo con el índice piso(R·tamaño) | `u` | individuo |
+| `build_contact_cdf` | Calcula las probabilidades acumuladas de Binomial(k, β/k) | `beta`, `k` | lista de k + 1 probabilidades |
+| `sample_contact_count` | Sortea el número de contactos por transformada inversa | `gen`, `cdf` | contactos entre 0 y k |
+
+### simulation.py
+
+| Función | Descripción | Parámetros | Retorno |
+|---|---|---|---|
+| `simulate_epidemic` | Simula una réplica completa | `params`, `gen` | lista de `DailyRecord` |
+| `EpidemicSimulation.run` | Avanza día a día hasta 365 o hasta que no queden E ni I | — | serie diaria S, E, I, R y F |
+| `EpidemicSimulation._draw_vaccinated` | Elige a los vacunados con un barajado parcial | — | lista de `bool` por individuo |
+| `EpidemicSimulation._draw_index_cases` | Elige los casos índice | — | lista de individuos |
+| `EpidemicSimulation._schedule_index_case` | Sortea el período infeccioso y el desenlace de un caso índice | `person` | — |
+| `EpidemicSimulation._simulate_contacts` | Pasos 1 a 3: contactos, selección y transmisión de cada infectado | `day` | — |
+| `EpidemicSimulation._pick_target` | Paso 2: elige el individuo contactado | — | individuo o `None` |
+| `EpidemicSimulation._transmits` | Paso 3: decide si hay contagio según la vacunación del contactado | `target` | `bool` |
+| `EpidemicSimulation._expose` | Pasa un individuo a E y agenda sus transiciones E → I e I → R | `person`, `day` | — |
+| `EpidemicSimulation._apply_scheduled_transitions` | Aplica las transiciones agendadas para el día | `day` | — |
+| `EpidemicSimulation._snapshot` | Registra S, E, I, R y F del día y verifica S + E + I + R = N | `day` | `DailyRecord` |
+
+### runner.py
+
+| Función | Descripción | Parámetros | Retorno |
+|---|---|---|---|
+| `run_scenario` | Ejecuta las réplicas de un escenario sobre una secuencia continua del generador | `config`, `semilla_base`, `n_replicas`, `gen`, `overwrite`, `verbose` | resúmenes, series y segundos |
+| `summarize_replica` | Calcula pico, día del pico, total de infectados, muertes y día de control | `records`, `params`, `initial_seed` | diccionario de métricas |
 
 ### execute_episim.py (programa principal)
 
-| Función | Papel |
+| Función | Descripción |
 |---|---|
-| `validate_generator` | media, varianza y chi-cuadrado (10 intervalos) de 100.000 números |
-| `sensitivity_analysis` | corre el caso base y los ocho casos mínimo/máximo, usando una secuencia continua del generador |
-| `save_summary`, `save_series` | escriben los CSV de cada escenario |
-| `peak_memory_mb` | memoria pico del proceso (solo disponible en Linux) |
-| `main` | lee los argumentos y coordina todo |
+| `main` | Lee los argumentos y coordina validación, escenarios, sensibilidad y tiempos |
+| `parse_args` | Lee `--replicas`, `--semilla` y `--rep-sensibilidad` |
+| `validate_generator` | Calcula media, varianza y chi-cuadrado (10 intervalos) de 100.000 números |
+| `save_generator_validation` | Guarda la validación en `validacion_generador.csv` |
+| `sensitivity_analysis` | Corre el caso base y los ocho casos mínimo/máximo con una secuencia continua del generador |
+| `save_summary` | Guarda el resumen por réplica de un escenario |
+| `save_series` | Guarda la serie diaria de cada réplica de un escenario |
+| `save_times` | Guarda los tiempos y la memoria en `tiempos.csv` |
+| `peak_memory_mb` | Memoria pico del proceso (solo disponible en Linux) |
 
 ### analisis_episim.py (generador de reportes)
 
-| Función | Salida |
+| Función | Descripción | Salida |
+|---|---|---|
+| `load_data` | Lee el resumen y las series de un escenario | tablas de pandas |
+| `population_size` | Deduce N a partir de los resultados | N |
+| `confidence_bands` | Calcula media, IC 95 % de la media y percentiles 2.5–97.5 por día | arreglos por día |
+| `plot_curves` | Curvas S, E, I, R con bandas | fig01 y fig02 |
+| `plot_histograms` | Histogramas de los resultados por réplica | fig03 |
+| `plot_comparison` | Comparación con y sin vacunación | fig04 |
+| `plot_tornado` | Gráfico tornado de sensibilidad | fig05 |
+| `plot_correlations` | Correlación de Spearman calculada sobre rangos | fig06 y `correlaciones_spearman.csv` |
+| `plot_homogeneous_comparison` | Comparación entre las dos reglas de selección | fig07 |
+| `build_statistics_table` | Estadísticas descriptivas por escenario | `estadisticas_descriptivas.csv` |
+
+### Estructuras de datos (models.py)
+
+| Estructura | Contenido |
 |---|---|
-| `plot_curves` | fig01 y fig02 |
-| `plot_histograms` | fig03 |
-| `plot_comparison` | fig04 |
-| `plot_tornado` | fig05 |
-| `plot_correlations` | fig06 y `correlaciones_spearman.csv`, calculadas sobre rangos |
-| `plot_homogeneous_comparison` | fig07 |
-| `build_statistics_table` | `estadisticas_descriptivas.csv` |
+| `State` | estados S, E, I y R de cada individuo |
+| `ReplicaParams` | parámetros fijos y sorteados de una réplica (inmutable) |
+| `DailyRecord` | S, E, I, R y F al cierre de un día |
+| `UniformSource` | contrato de cualquier fuente de números U[0, 1): `next()` y `state` |
+| `Config` | diccionario `{parametro: (min, max)}` leído del CSV |
+
+Dentro de la simulación, el estado de cada individuo se guarda en una lista indexada por
+individuo; los susceptibles y los infectados activos, en dos `IndexedPool`, y las
+transiciones futuras, en diccionarios `{día: [individuos]}`.
 
 ## Decisiones de diseño
 
@@ -274,7 +338,47 @@ ejecución se detiene.
 Las curvas muestran dos bandas: el IC 95 % de la media (media ± 1.96·s/√n) y los
 percentiles 2.5 y 97.5 de las réplicas, que describen la variación entre réplicas.
 
-## Limitaciones conocidas
+## Análisis crítico
+
+### Validez de los supuestos
+
+- **Número reproductivo básico.** Sin vacunación, cada infectado produce en promedio
+  R₀ ≈ β·p·(1/γ) contagios. Con los rangos del enunciado, R₀ va de 0.3·0.4·7 = 0.84 a
+  0.5·0.6·14 = 4.2, con valor central 0.4·0.5·10.5 = 2.1, un orden de magnitud propio de
+  enfermedades respiratorias. En mezcla homogénea, un R₀ de 2.1 predice que se infecta
+  cerca del 80 % de la población; el escenario `sin_vacunacion_homogenea` da un total
+  medio de 7921 infectados (79 %), coherente con ese valor.
+- **Contactos solo con susceptibles.** La regla del enunciado hace que cada contacto
+  encuentre siempre a un susceptible, por lo que el contagio no se frena al agotarse los
+  susceptibles. Por eso, sin vacunación, se infecta el 100 % de la población en todas las
+  réplicas. Los escenarios `_homogenea` muestran el resultado con la regla clásica.
+- **Vacunación.** Con la tasa y la efectividad centrales (0.5 y 0.875), el número
+  reproductivo efectivo baja a cerca de 2.1·(1 − 0.5·0.875) ≈ 1.2. Al quedar cerca de 1,
+  el resultado depende mucho del sorteo: el 38 % de las réplicas no llega a un brote mayor
+  y la distribución del total de infectados es muy dispersa.
+- **Parámetros añadidos.** `contactos_maximos_k`, `letalidad` y `umbral_control` no
+  vienen del enunciado; son supuestos del grupo y cambian las muertes y el día de control,
+  pero no la dinámica del contagio.
+
+### Limitaciones del modelo
+
+- **Población homogénea y cerrada:** todos los individuos tienen el mismo riesgo y
+  contactos; no hay edades, estructura espacial, nacimientos ni muertes por otras causas.
+- **Parámetros constantes:** β y p no cambian durante los 365 días; no hay cambios de
+  comportamiento ni intervenciones como cuarentena o aislamiento.
+- **Vacunación instantánea:** todos los vacunados lo están desde el día 0, la protección
+  no decae y la inmunidad tras la recuperación es permanente.
+- **Duraciones uniformes:** los períodos de incubación e infeccioso siguen U(a, b)
+  redondeada, cuando en la literatura suelen modelarse con distribuciones gamma o
+  lognormal.
+- **Paso diario:** los contagios de un día se procesan en el orden de la lista de
+  infectados; los expuestos ese día no contagian hasta terminar su incubación.
+- **Muertes:** dependen de una letalidad fija, sin relación con la edad ni con la
+  saturación del sistema de salud.
+- **Sensibilidad de un factor a la vez:** el tornado no captura interacciones entre
+  parámetros; la correlación de Spearman las refleja solo en parte.
+
+### Limitaciones de la implementación
 
 - `memoria_pico_MB` en `tiempos.csv` vale 0.0 en Windows, porque el módulo `resource`
   solo existe en Linux.
@@ -282,3 +386,13 @@ percentiles 2.5 y 97.5 de las réplicas, que describen la variación entre répl
   índices piso(R·n) frente a ese caso. Con la semilla por defecto no se alcanza ese valor.
 - `validate_generator` es una comprobación rápida del generador. Las pruebas completas
   del generador se mantienen en `punto3_generadores_pseudoaleatorios`.
+
+### Posibles mejoras
+
+- Estructura por edades con tasas de contacto y letalidad distintas.
+- Red de contactos o estructura espacial en lugar de mezcla homogénea.
+- Intervenciones dependientes del tiempo: cuarentena, aislamiento de casos y vacunación
+  progresiva.
+- Períodos con distribución gamma y pérdida de inmunidad con el tiempo.
+- Análisis de sensibilidad global (por ejemplo, índices de Sobol) para medir
+  interacciones entre parámetros.

@@ -12,12 +12,16 @@ MOVIMIENTOS_3D = [(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0
 
 
 def generar_numeros(semilla, cantidad):
+    # Genera una secuencia pseudoaleatoria normalizada en el intervalo [0, 1).
+    # La semilla determina el estado inicial y cantidad define la longitud.
     # Números R_i en [0, 1) del generador del Punto 3 (solo se usa numeros_r)
     secuencia = generadores.generar_congruencial_multiplicativo(semilla, MULTIPLICADOR, MODULO, cantidad)
     return secuencia["numeros_r"]
 
 
 def caminata_1d(semilla, pasos):
+    # Simula una caminata aleatoria unidimensional desde el origen.
+    # Retorna la posición final y un indicador de retorno durante los primeros pasos.
     numeros = generar_numeros(semilla, pasos)
     x = 0
     retorno = False
@@ -34,6 +38,8 @@ def caminata_1d(semilla, pasos):
 
 
 def caminata_2d(semilla, pasos):
+    # Simula una caminata aleatoria bidimensional con movimientos cardinales.
+    # Cada número aleatorio se transforma en una dirección del plano.
     numeros = generar_numeros(semilla, pasos)
     x = 0
     y = 0
@@ -49,6 +55,8 @@ def caminata_2d(semilla, pasos):
 
 
 def caminata_3d(semilla, pasos):
+    # Simula una caminata aleatoria tridimensional sobre los ejes cartesianos.
+    # Cada número aleatorio se transforma en una de las seis direcciones posibles.
     numeros = generar_numeros(semilla, pasos)
     x = 0
     y = 0
@@ -66,7 +74,8 @@ def caminata_3d(semilla, pasos):
 
 
 def trayectoria(dimension, semilla, pasos):
-    """Devuelve las listas x, y, z de una caminata corta (para graficarla)."""
+    # Construye las coordenadas acumuladas de la caminata para su representación gráfica.
+    # La salida siempre contiene listas para x, y y z, incluso en una dimensión.
     numeros = generar_numeros(semilla, pasos)
     # En 1D, y y z se devuelven como ceros para graficar con el mismo código
     if dimension == 1:
@@ -90,7 +99,8 @@ def trayectoria(dimension, semilla, pasos):
 
 
 def probabilidad_exacta_retorno(n):
-    """P(S_n = 0) en 1D: C(n, n/2) / 2^n si n es par, 0 si es impar."""
+    # Calcula la probabilidad exacta de que una caminata 1D termine en el origen.
+    # Para n impar, la paridad hace imposible que la posición final sea cero.
     from math import comb
     # Con n impar el retorno exacto es imposible
     if n % 2 == 1:
@@ -99,8 +109,8 @@ def probabilidad_exacta_retorno(n):
 
 
 def encadenar_semillas(semilla_inicial, cantidad_de_semillas, pasos):
-    """Semillas de las réplicas: cada una arranca donde terminó la anterior
-    (último X_i tras `pasos` números), así ninguna réplica repite números de otra."""
+    # Construye una semilla para cada réplica a partir del estado final anterior.
+    # El avance de pasos estados evita reutilizar bloques de números aleatorios.
     semillas = [semilla_inicial]
     x = semilla_inicial
     for _ in range(cantidad_de_semillas - 1):

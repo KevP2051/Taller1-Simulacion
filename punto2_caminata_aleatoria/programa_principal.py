@@ -24,7 +24,8 @@ FUNCIONES = {1: caminata.caminata_1d, 2: caminata.caminata_2d, 3: caminata.camin
 
 
 def elegir_semillas():
-    """Menú de 2 opciones: las 100 semillas del CSV o una semilla tomada del reloj (time)."""
+    # Selecciona el origen de las semillas utilizadas por las réplicas.
+    # La opción del archivo favorece la reproducibilidad y la opción temporal cambia la corrida.
     while True:
         print("Origen de las semillas:")
         print(f"  1. Las {REPLICAS} semillas del archivo semillas_caminata.csv")
@@ -48,6 +49,8 @@ def elegir_semillas():
 
 
 def validar_generador(semilla):
+    # Ejecuta las pruebas estadísticas del generador antes de la simulación.
+    # Los resultados permiten verificar uniformidad e independencia aproximada.
     # Pruebas del Punto 3 sobre los números de la primera réplica, antes de simular
     numeros_r = caminata.generar_numeros(semilla, PASOS)
     intervalos = pruebas.cantidad_de_intervalos_por_defecto(len(numeros_r))
@@ -64,6 +67,8 @@ def validar_generador(semilla):
 
 
 def ejecutar_replicas(dimension):
+    # Ejecuta todas las réplicas correspondientes a una dimensión espacial.
+    # Acumula posiciones finales, retornos al origen y tiempo total de ejecución.
     funcion = FUNCIONES[dimension]
     posiciones_finales = []
     retornos = 0
@@ -82,6 +87,8 @@ def ejecutar_replicas(dimension):
 
 
 def medir_memoria(dimension):
+    # Mide el pico de memoria utilizado por una réplica de la dimensión indicada.
+    # El resultado se convierte de bytes a megabytes.
     # Pico de memoria (MB) de una sola réplica
     tracemalloc.start()
     FUNCIONES[dimension](SEMILLA_BASE, PASOS)
@@ -91,6 +98,8 @@ def medir_memoria(dimension):
 
 
 def graficar_histograma_1d(posiciones):
+    # Compara las posiciones finales observadas con la distribución normal teórica.
+    # También calcula media, desviación muestral y proporción dentro de una desviación.
     valores = [p[0] for p in posiciones]
     media = sum(valores) / len(valores)
     # Desviación muestral (n - 1) y proporción dentro de ±1σ, para compararlas con la teoría
@@ -115,6 +124,7 @@ def graficar_histograma_1d(posiciones):
 
 
 def graficar_trayectoria_1d():
+    # Genera y almacena la trayectoria de referencia para la caminata unidimensional.
     # Trayectoria corta (10.000 pasos) con la semilla base
     lista_x, _, _ = caminata.trayectoria(1, SEMILLA_BASE, 10000)
     plt.figure(figsize=(9, 4.5))
@@ -131,6 +141,7 @@ def graficar_trayectoria_1d():
 
 
 def graficar_2d(posiciones):
+    # Genera la trayectoria de referencia y la dispersión de posiciones finales en 2D.
     # Figura 1: trayectoria de 10.000 pasos
     lista_x, lista_y, _ = caminata.trayectoria(2, SEMILLA_BASE, 10000)
     plt.figure(figsize=(6, 6))
@@ -153,6 +164,7 @@ def graficar_2d(posiciones):
 
 
 def graficar_3d(posiciones):
+    # Genera la trayectoria tridimensional y sus proyecciones sobre los planos coordenados.
     # Figura 1: trayectoria de 10.000 pasos
     lista_x, lista_y, lista_z = caminata.trayectoria(3, SEMILLA_BASE, 10000)
     figura = plt.figure(figsize=(8, 7))
@@ -198,6 +210,7 @@ def graficar_3d(posiciones):
 
 
 def main():
+    # Coordina la selección de semillas, validación, simulación y generación de resultados.
     global SEMILLAS, SEMILLA_BASE
     SEMILLAS = elegir_semillas()
     SEMILLA_BASE = SEMILLAS[0]

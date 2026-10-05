@@ -7,12 +7,14 @@ from matplotlib.figure import Figure
 from punto3_generadores_pseudoaleatorios.pruebas import cantidad_de_intervalos_por_defecto
 
 
+# Escribe un valor con cinco decimales si es decimal
 def formatear_valor(valor):
     if isinstance(valor, float):
         return f"{valor:.5f}"
     return str(valor)
 
 
+# Arma las columnas de la tabla de una secuencia
 def obtener_columnas_de_secuencia(secuencia):
     columnas = {
         "i": list(range(1, len(secuencia["numeros_r"]) + 1)),
@@ -26,12 +28,14 @@ def obtener_columnas_de_secuencia(secuencia):
     return columnas
 
 
+# Arma las filas de la tabla de una secuencia
 def obtener_filas_de_secuencia(secuencia):
     columnas = obtener_columnas_de_secuencia(secuencia)
     filas = zip_longest(*columnas.values(), fillvalue="")
     return list(columnas.keys()), ([formatear_valor(valor) for valor in fila] for fila in filas)
 
 
+# Escribe un resumen de la secuencia
 def describir_secuencia(secuencia):
     lineas = [
         secuencia["etiqueta"],
@@ -56,6 +60,7 @@ def describir_secuencia(secuencia):
     return "\n".join(lineas)
 
 
+# Guarda una secuencia en un archivo CSV
 def exportar_secuencia_a_csv(secuencia, ruta_del_archivo):
     encabezados, filas = obtener_filas_de_secuencia(secuencia)
     with open(ruta_del_archivo, "w", newline="", encoding="utf-8") as archivo:
@@ -64,6 +69,7 @@ def exportar_secuencia_a_csv(secuencia, ruta_del_archivo):
         escritor.writerows(filas)
 
 
+# Crea una figura con varios paneles
 def crear_figura_con_paneles(cantidad_de_paneles, titulo):
     columnas = math.ceil(math.sqrt(cantidad_de_paneles))
     filas = math.ceil(cantidad_de_paneles / columnas)
@@ -75,6 +81,7 @@ def crear_figura_con_paneles(cantidad_de_paneles, titulo):
     return figura, paneles[:cantidad_de_paneles]
 
 
+# Crea el histograma de una secuencia
 def crear_histograma_de_secuencia(secuencia):
     distribuciones = [("R_i en [0, 1]", secuencia["numeros_r"], (0, 1))]
     if "numeros_uniformes" in secuencia:
@@ -93,12 +100,14 @@ def crear_histograma_de_secuencia(secuencia):
     return figura
 
 
+# Escribe el criterio de aceptación de una prueba
 def describir_criterio(resultado):
     if resultado["prueba"] in ("Medias", "Varianza"):
         return f"[{resultado['limite_inferior']:.5f}, {resultado['limite_superior']:.5f}]"
     return f"{resultado['valor_critico']:.5f}"
 
 
+# Escribe el resultado de una prueba
 def describir_resultado(resultado):
     decision = "pasa" if resultado["pasa"] else "no pasa"
     return (
@@ -107,10 +116,12 @@ def describir_resultado(resultado):
     )
 
 
+# Parte una etiqueta larga en varias líneas
 def acortar_etiqueta(etiqueta):
     return etiqueta.replace(" (", "\n(", 1).replace(", a =", ",\na =", 1)
 
 
+# Crea el gráfico de los valores por bloque
 def crear_grafico_de_distribucion_por_bloques(resultados, titulo, nombre_del_estadistico, nombre_del_valor_esperado):
     figura, paneles = crear_figura_con_paneles(len(resultados), titulo)
     for panel, resultado in zip(paneles, resultados):
@@ -145,18 +156,21 @@ def crear_grafico_de_distribucion_por_bloques(resultados, titulo, nombre_del_est
     return figura
 
 
+# Crea el gráfico de la prueba de medias
 def crear_grafico_de_medias(resultados):
     return crear_grafico_de_distribucion_por_bloques(
         resultados, "Prueba de medias: distribución de las medias por bloque", "Media", "Media teórica"
     )
 
 
+# Crea el gráfico de la prueba de varianza
 def crear_grafico_de_varianzas(resultados):
     return crear_grafico_de_distribucion_por_bloques(
         resultados, "Prueba de varianza: distribución de las varianzas por bloque", "Varianza", "Varianza teórica 1/12"
     )
 
 
+# Crea el gráfico de la prueba de Kolmogorov-Smirnov
 def crear_grafico_kolmogorov_smirnov(resultados):
     figura, paneles = crear_figura_con_paneles(len(resultados), "Prueba de Kolmogorov-Smirnov: S(x) empírica vs F(x) teórica")
     for panel, resultado in zip(paneles, resultados):
@@ -174,6 +188,7 @@ def crear_grafico_kolmogorov_smirnov(resultados):
     return figura
 
 
+# Dibuja barras de frecuencias observadas y esperadas
 def dibujar_barras_observadas_contra_esperadas(panel, nombres_de_las_barras, frecuencias_observadas, frecuencias_esperadas):
     posiciones = range(len(nombres_de_las_barras))
     ancho_de_barra = 0.4
@@ -184,6 +199,7 @@ def dibujar_barras_observadas_contra_esperadas(panel, nombres_de_las_barras, fre
     panel.legend(loc="upper right", fontsize=8)
 
 
+# Crea el gráfico de la prueba chi-cuadrado
 def crear_grafico_chi_cuadrado(resultados):
     figura, paneles = crear_figura_con_paneles(len(resultados), "Prueba chi-cuadrado: frecuencias observadas vs esperadas")
     for panel, resultado in zip(paneles, resultados):
@@ -201,6 +217,7 @@ def crear_grafico_chi_cuadrado(resultados):
     return figura
 
 
+# Crea el gráfico de la prueba de póker
 def crear_grafico_de_poker(resultados):
     figura, paneles = crear_figura_con_paneles(len(resultados), "Prueba de póker: manos observadas vs esperadas")
     for panel, resultado in zip(paneles, resultados):

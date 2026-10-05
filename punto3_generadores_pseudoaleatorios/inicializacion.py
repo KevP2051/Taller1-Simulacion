@@ -8,6 +8,7 @@ CAMPOS_POR_METODO = {
 }
 
 
+# Convierte a entero los campos de una fila
 def convertir_campos_a_enteros(fila, campos):
     fila_convertida = {"metodo": fila["metodo"]}
     errores = []
@@ -21,6 +22,7 @@ def convertir_campos_a_enteros(fila, campos):
     return fila_convertida, errores
 
 
+# Revisa que una fila de semillas sea válida
 def validar_fila_de_semilla(fila):
     metodo = str(fila.get("metodo") or "").strip()
     if metodo not in CAMPOS_POR_METODO:
@@ -52,6 +54,7 @@ def validar_fila_de_semilla(fila):
     return fila_convertida, []
 
 
+# Lee las semillas desde un archivo .txt o .csv
 def leer_archivo_de_semillas(ruta_del_archivo):
     ruta = Path(ruta_del_archivo)
     if ruta.suffix.lower() not in (".csv", ".txt"):

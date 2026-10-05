@@ -40,6 +40,7 @@ figuras_disponibles = {}
 componentes = {}
 
 
+# Genera la secuencia que pide una fila
 def generar_secuencia_desde_fila(fila):
     if fila["metodo"] == "cuadrados_medios":
         return generadores.generar_cuadrados_medios(fila["semilla"], fila["digitos"], fila["cantidad"])
@@ -48,6 +49,7 @@ def generar_secuencia_desde_fila(fila):
     return generadores.generar_congruencial_multiplicativo(fila["semilla"], fila["a"], fila["m"], fila["cantidad"])
 
 
+# Genera una secuencia y la guarda en la lista
 def agregar_secuencia(fila, limites_de_uniforme, incluir_normal):
     secuencia = generar_secuencia_desde_fila(fila)
     if limites_de_uniforme is not None:
@@ -61,6 +63,7 @@ def agregar_secuencia(fila, limites_de_uniforme, incluir_normal):
     return secuencia
 
 
+# Lee los datos escritos en la ventana
 def leer_fila_de_campos():
     fila = {"metodo": NOMBRES_DE_METODOS[componentes["metodo"].get()]}
     for nombre_del_campo, _, _ in CAMPOS_DE_GENERACION:
@@ -68,6 +71,7 @@ def leer_fila_de_campos():
     return fila
 
 
+# Lee qué transformaciones se eligieron
 def leer_opciones_de_transformacion():
     if not componentes["incluir_uniforme"].get():
         return None, []
@@ -81,12 +85,14 @@ def leer_opciones_de_transformacion():
     return (limite_inferior, limite_superior), []
 
 
+# Activa solo los campos del método elegido
 def actualizar_campos_habilitados(evento=None):
     campos_del_metodo = inicializacion.CAMPOS_POR_METODO[NOMBRES_DE_METODOS[componentes["metodo"].get()]]
     for nombre_del_campo, campo in componentes["campos"].items():
         campo.state(["!disabled"] if nombre_del_campo in campos_del_metodo else ["disabled"])
 
 
+# Refresca la lista de secuencias generadas
 def actualizar_lista_de_secuencias(indice_a_elegir=None):
     lista = componentes["lista_de_secuencias"]
     lista.delete(*lista.get_children())
@@ -104,11 +110,13 @@ def actualizar_lista_de_secuencias(indice_a_elegir=None):
         mostrar_secuencia_elegida()
 
 
+# Devuelve la secuencia elegida en la lista
 def obtener_indice_elegido():
     seleccion = componentes["lista_de_secuencias"].selection()
     return int(seleccion[0]) if seleccion else None
 
 
+# Muestra la tabla de la secuencia elegida
 def mostrar_secuencia_elegida(evento=None):
     tabla = componentes["tabla"]
     tabla.delete(*tabla.get_children())
@@ -131,6 +139,7 @@ def mostrar_secuencia_elegida(evento=None):
     componentes["detalle"].set(detalle)
 
 
+# Genera una secuencia con los datos escritos a mano
 def generar_desde_campos():
     fila, errores = inicializacion.validar_fila_de_semilla(leer_fila_de_campos())
     limites_de_uniforme, errores_de_uniforme = leer_opciones_de_transformacion()
@@ -142,6 +151,7 @@ def generar_desde_campos():
     actualizar_lista_de_secuencias(len(secuencias_generadas) - 1)
 
 
+# Carga un archivo de semillas y genera sus secuencias
 def cargar_archivo_de_semillas():
     ruta_del_archivo = filedialog.askopenfilename(
         title="Cargar archivo de semillas",
@@ -166,6 +176,7 @@ def cargar_archivo_de_semillas():
     messagebox.showinfo("Cargar archivo de semillas", "\n".join(lineas))
 
 
+# Guarda la secuencia elegida en un archivo CSV
 def exportar_secuencia_elegida():
     indice_elegido = obtener_indice_elegido()
     if indice_elegido is None:
@@ -181,6 +192,7 @@ def exportar_secuencia_elegida():
         messagebox.showinfo("Exportar CSV", f"Secuencia exportada en:\n{ruta_del_archivo}")
 
 
+# Borra la secuencia elegida de la lista
 def quitar_secuencia_elegida():
     indice_elegido = obtener_indice_elegido()
     if indice_elegido is not None:
@@ -188,6 +200,7 @@ def quitar_secuencia_elegida():
         actualizar_lista_de_secuencias()
 
 
+# Dibuja en la ventana el gráfico elegido
 def mostrar_grafico_elegido(evento=None):
     area_de_grafico = componentes["area_de_grafico"]
     for elemento in area_de_grafico.winfo_children():
@@ -202,6 +215,7 @@ def mostrar_grafico_elegido(evento=None):
     lienzo.draw()
 
 
+# Agrega gráficos nuevos y muestra uno
 def publicar_graficos(figuras_nuevas, nombre_a_mostrar):
     figuras_disponibles.update(figuras_nuevas)
     componentes["grafico_elegido"]["values"] = list(figuras_disponibles)
@@ -209,6 +223,7 @@ def publicar_graficos(figuras_nuevas, nombre_a_mostrar):
     mostrar_grafico_elegido()
 
 
+# Muestra el histograma de la secuencia elegida
 def mostrar_histograma_elegido():
     indice_elegido = obtener_indice_elegido()
     if indice_elegido is None:
@@ -217,6 +232,7 @@ def mostrar_histograma_elegido():
     publicar_graficos({"Histograma": reportes.crear_histograma_de_secuencia(secuencias_generadas[indice_elegido])}, "Histograma")
 
 
+# Corre las pruebas elegidas y muestra sus gráficos
 def ejecutar_y_graficar_pruebas():
     resultados_por_prueba = ejecutar_pruebas_elegidas()
     if resultados_por_prueba:
@@ -231,6 +247,7 @@ def ejecutar_y_graficar_pruebas():
         publicar_graficos(figuras_de_pruebas, next(iter(figuras_de_pruebas)))
 
 
+# Muestra el gráfico de la prueba elegida en la tabla
 def mostrar_grafico_de_la_fila_elegida(evento=None):
     seleccion = componentes["resumen"].selection()
     if seleccion:
@@ -240,6 +257,7 @@ def mostrar_grafico_de_la_fila_elegida(evento=None):
             mostrar_grafico_elegido()
 
 
+# Lee la cantidad de intervalos escrita
 def leer_cantidad_de_intervalos():
     try:
         cantidad_de_intervalos = int(componentes["cantidad_de_intervalos"].get())
@@ -248,6 +266,7 @@ def leer_cantidad_de_intervalos():
     return cantidad_de_intervalos if cantidad_de_intervalos >= 2 else None
 
 
+# Corre las pruebas elegidas sobre las secuencias
 def ejecutar_pruebas_elegidas():
     pruebas_elegidas = [nombre for nombre, elegida in componentes["pruebas_elegidas"].items() if elegida.get()]
     secuencias_con_numeros = [secuencia for secuencia in secuencias_generadas if len(secuencia["numeros_r"]) >= 2]
@@ -278,6 +297,7 @@ def ejecutar_pruebas_elegidas():
     return resultados_por_prueba
 
 
+# Crea la parte de la ventana para generar
 def crear_marco_de_generacion(ventana):
     marco = ttk.LabelFrame(ventana, text="Generación", padding=8)
     ttk.Label(marco, text="Método").grid(row=0, column=0, sticky="w")
@@ -311,6 +331,7 @@ def crear_marco_de_generacion(ventana):
     return marco
 
 
+# Crea la parte de la ventana con la lista de secuencias
 def crear_marco_de_secuencias(ventana):
     marco = ttk.LabelFrame(ventana, text="Secuencias generadas", padding=8)
     lista = ttk.Treeview(marco, columns=("secuencia", "numeros", "avisos"), show="headings", selectmode="browse", height=4)
@@ -330,6 +351,7 @@ def crear_marco_de_secuencias(ventana):
     return marco
 
 
+# Crea la parte de la ventana con la tabla
 def crear_marco_de_tabla(ventana):
     marco = ttk.LabelFrame(ventana, text="Tabla de la secuencia elegida", padding=8)
     tabla = ttk.Treeview(marco, show="headings")
@@ -341,6 +363,7 @@ def crear_marco_de_tabla(ventana):
     return marco
 
 
+# Crea la parte de la ventana para las pruebas
 def crear_marco_de_pruebas(ventana):
     marco = ttk.LabelFrame(ventana, text="Pruebas de validación (α = 0.05)", padding=8)
     opciones = ttk.Frame(marco)
@@ -387,6 +410,7 @@ def crear_marco_de_pruebas(ventana):
     return marco
 
 
+# Crea la ventana principal
 def crear_ventana_principal():
     ventana = tk.Tk()
     ventana.title("Generadores y validadores de números pseudoaleatorios")
@@ -405,6 +429,7 @@ def crear_ventana_principal():
     return ventana
 
 
+# Abre el programa
 def iniciar_programa():
     crear_ventana_principal().mainloop()
 

@@ -34,6 +34,7 @@ CATEGORIA_POR_REPETICIONES = {
 }
 
 
+# Calcula la probabilidad acumulada de la chi-cuadrado
 def probabilidad_acumulada_chi_cuadrado(valor_x, grados_de_libertad):
     if valor_x <= 0:
         return 0.0
@@ -67,6 +68,7 @@ def probabilidad_acumulada_chi_cuadrado(valor_x, grados_de_libertad):
     return 1 - math.exp(logaritmo_del_factor_comun) * fraccion_continua
 
 
+# Calcula el valor crítico de la chi-cuadrado
 def valor_critico_chi_cuadrado(probabilidad_acumulada, grados_de_libertad):
     limite_inferior = 0.0
     limite_superior = grados_de_libertad + 10 * math.sqrt(2 * grados_de_libertad) + 10
@@ -79,10 +81,12 @@ def valor_critico_chi_cuadrado(probabilidad_acumulada, grados_de_libertad):
     return truncar_a_cinco_decimales((limite_inferior + limite_superior) / 2)
 
 
+# Calcula cuántos intervalos usar por defecto
 def cantidad_de_intervalos_por_defecto(cantidad_de_numeros):
     return max(2, round(math.sqrt(cantidad_de_numeros)))
 
 
+# Calcula el estadístico chi-cuadrado
 def calcular_estadistico_chi_cuadrado(frecuencias_observadas, frecuencias_esperadas):
     return truncar_a_cinco_decimales(
         sum(
@@ -92,6 +96,7 @@ def calcular_estadistico_chi_cuadrado(frecuencias_observadas, frecuencias_espera
     )
 
 
+# Cuenta cuántos números caen en cada intervalo
 def contar_frecuencias_por_intervalo(numeros_r, cantidad_de_intervalos):
     frecuencias_observadas = [0] * cantidad_de_intervalos
     for numero_r in numeros_r:
@@ -100,6 +105,7 @@ def contar_frecuencias_por_intervalo(numeros_r, cantidad_de_intervalos):
     return frecuencias_observadas
 
 
+# Devuelve los límites de cada intervalo
 def obtener_limites_de_intervalos(cantidad_de_intervalos):
     return [
         (truncar_a_cinco_decimales(indice / cantidad_de_intervalos), truncar_a_cinco_decimales((indice + 1) / cantidad_de_intervalos))
@@ -107,6 +113,7 @@ def obtener_limites_de_intervalos(cantidad_de_intervalos):
     ]
 
 
+# Parte la secuencia en bloques
 def dividir_en_bloques(numeros_r):
     cantidad_de_numeros = len(numeros_r)
     cantidad_de_bloques = max(1, min(cantidad_de_intervalos_por_defecto(cantidad_de_numeros), cantidad_de_numeros // 2))
@@ -114,16 +121,19 @@ def dividir_en_bloques(numeros_r):
     return [numeros_r[indice * tamano_del_bloque:(indice + 1) * tamano_del_bloque] for indice in range(cantidad_de_bloques)]
 
 
+# Calcula los límites de aceptación de la media
 def calcular_limites_de_medias(cantidad_de_numeros):
     margen_de_aceptacion = VALOR_Z * math.sqrt(1 / 12) / math.sqrt(cantidad_de_numeros)
     return truncar_a_cinco_decimales(0.5 - margen_de_aceptacion), truncar_a_cinco_decimales(0.5 + margen_de_aceptacion)
 
 
+# Calcula la varianza de la secuencia
 def calcular_varianza(numeros_r):
     media = sum(numeros_r) / len(numeros_r)
     return truncar_a_cinco_decimales(sum((numero_r - media) ** 2 for numero_r in numeros_r) / (len(numeros_r) - 1))
 
 
+# Calcula los límites de aceptación de la varianza
 def calcular_limites_de_varianza(cantidad_de_numeros):
     grados_de_libertad = cantidad_de_numeros - 1
     chi_cuadrado_inferior = valor_critico_chi_cuadrado(NIVEL_DE_SIGNIFICANCIA / 2, grados_de_libertad)
@@ -136,6 +146,7 @@ def calcular_limites_de_varianza(cantidad_de_numeros):
     )
 
 
+# Prueba de medias
 def prueba_de_medias(numeros_r):
     media = truncar_a_cinco_decimales(sum(numeros_r) / len(numeros_r))
     limite_inferior, limite_superior = calcular_limites_de_medias(len(numeros_r))
@@ -155,6 +166,7 @@ def prueba_de_medias(numeros_r):
     }
 
 
+# Prueba de varianza
 def prueba_de_varianza(numeros_r):
     varianza = calcular_varianza(numeros_r)
     chi_cuadrado_inferior, chi_cuadrado_superior, limite_inferior, limite_superior = calcular_limites_de_varianza(len(numeros_r))
@@ -176,12 +188,14 @@ def prueba_de_varianza(numeros_r):
     }
 
 
+# Calcula el valor crítico de Kolmogorov-Smirnov
 def valor_critico_kolmogorov_smirnov(cantidad_de_numeros):
     if cantidad_de_numeros <= len(TABLA_KOLMOGOROV_SMIRNOV):
         return TABLA_KOLMOGOROV_SMIRNOV[cantidad_de_numeros - 1]
     return truncar_a_cinco_decimales(1.36 / math.sqrt(cantidad_de_numeros))
 
 
+# Prueba de Kolmogorov-Smirnov
 def prueba_kolmogorov_smirnov(numeros_r, cantidad_de_intervalos):
     cantidad_de_numeros = len(numeros_r)
     frecuencias_observadas = contar_frecuencias_por_intervalo(numeros_r, cantidad_de_intervalos)
@@ -209,6 +223,7 @@ def prueba_kolmogorov_smirnov(numeros_r, cantidad_de_intervalos):
     }
 
 
+# Prueba chi-cuadrado
 def prueba_chi_cuadrado(numeros_r, cantidad_de_intervalos):
     cantidad_de_numeros = len(numeros_r)
     frecuencias_observadas = contar_frecuencias_por_intervalo(numeros_r, cantidad_de_intervalos)
@@ -230,12 +245,14 @@ def prueba_chi_cuadrado(numeros_r, cantidad_de_intervalos):
     }
 
 
+# Dice qué mano de póker forman los dígitos de un número
 def clasificar_mano_de_poker(numero_r):
     cinco_digitos = f"{numero_r:.5f}".split(".")[1]
     repeticiones = tuple(sorted((cinco_digitos.count(digito) for digito in set(cinco_digitos)), reverse=True))
     return CATEGORIA_POR_REPETICIONES[repeticiones]
 
 
+# Prueba de póker
 def prueba_de_poker(numeros_r):
     cantidad_de_numeros = len(numeros_r)
     frecuencias_por_categoria = {categoria: 0 for categoria in PROBABILIDADES_DE_POKER}

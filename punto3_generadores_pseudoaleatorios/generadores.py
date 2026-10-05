@@ -2,19 +2,23 @@ import math
 from decimal import Decimal, ROUND_DOWN
 
 
+# Corta un número a cinco decimales sin redondear
 def truncar_a_cinco_decimales(valor):
     return float(Decimal(repr(round(valor, 10))).quantize(Decimal("0.00001"), rounding=ROUND_DOWN))
 
 
+# Divide y corta el resultado a cinco decimales
 def truncar_cociente_a_cinco_decimales(numerador, denominador):
     return (numerador * 100000) // denominador / 100000
 
 
+# Convierte X_i en un número R_i entre 0 y 1
 def normalizar_con_modulo(valor_x, modulo_m):
     divisor = modulo_m if modulo_m % 2 == 1 else modulo_m - 1
     return truncar_cociente_a_cinco_decimales(valor_x, divisor)
 
 
+# Genera números con el método de cuadrados medios
 def generar_cuadrados_medios(semilla, cantidad_de_digitos, cantidad_de_numeros):
     valores_x = []
     numeros_r = []
@@ -48,6 +52,7 @@ def generar_cuadrados_medios(semilla, cantidad_de_digitos, cantidad_de_numeros):
     }
 
 
+# Devuelve los factores primos de un número
 def obtener_factores_primos(numero):
     factores_primos = []
     divisor = 2
@@ -62,6 +67,7 @@ def obtener_factores_primos(numero):
     return factores_primos
 
 
+# Revisa si se cumplen las condiciones de Hull-Dobell
 def verificar_hull_dobell(multiplicador_a, incremento_c, modulo_m):
     condicion_c_y_m_primos_entre_si = math.gcd(incremento_c, modulo_m) == 1
     condicion_factores_primos_de_m = all(
@@ -76,6 +82,7 @@ def verificar_hull_dobell(multiplicador_a, incremento_c, modulo_m):
     }
 
 
+# Base común de los métodos congruenciales
 def generar_congruencial(metodo, etiqueta, semilla, multiplicador_a, incremento_c, modulo_m, cantidad_de_numeros):
     valores_x = []
     numeros_r = []
@@ -102,6 +109,7 @@ def generar_congruencial(metodo, etiqueta, semilla, multiplicador_a, incremento_
     }
 
 
+# Genera números con el método congruencial lineal
 def generar_congruencial_lineal(semilla, multiplicador_a, incremento_c, modulo_m, cantidad_de_numeros):
     secuencia = generar_congruencial(
         "congruencial_lineal",
@@ -118,6 +126,7 @@ def generar_congruencial_lineal(semilla, multiplicador_a, incremento_c, modulo_m
     return secuencia
 
 
+# Genera números con el método congruencial multiplicativo
 def generar_congruencial_multiplicativo(semilla, multiplicador_a, modulo_m, cantidad_de_numeros):
     secuencia = generar_congruencial(
         "congruencial_multiplicativo",
@@ -132,6 +141,7 @@ def generar_congruencial_multiplicativo(semilla, multiplicador_a, modulo_m, cant
     return secuencia
 
 
+# Pasa los R_i a una uniforme entre a y b
 def transformar_a_uniforme(numeros_r, limite_inferior, limite_superior):
     return [
         truncar_a_cinco_decimales(limite_inferior + (limite_superior - limite_inferior) * numero_r)
@@ -139,6 +149,7 @@ def transformar_a_uniforme(numeros_r, limite_inferior, limite_superior):
     ]
 
 
+# Pasa los R_i a una normal estándar
 def transformar_a_normal_estandar(numeros_r):
     numeros_normales = []
     avisos = []

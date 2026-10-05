@@ -16,6 +16,15 @@ y 4 (EpiSim) del taller.
 python -m pip install matplotlib
 ```
 
+### Equipo de desarrollo y pruebas
+
+| Elemento | Especificación |
+|---|---|
+| Lenguaje | Python 3.14.0 (matplotlib 3.10.8, Tk 8.6) |
+| Sistema operativo | Windows 11 Pro 64 bits (versión 10.0.26200) |
+| Procesador | AMD Ryzen 7 5800XT, 8 núcleos y 16 hilos |
+| Memoria RAM | 16 GB |
+
 ## Uso
 
 El programa se ejecuta desde la carpeta raíz del taller:

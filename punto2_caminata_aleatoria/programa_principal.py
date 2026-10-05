@@ -152,7 +152,8 @@ def graficar_2d(posiciones):
     plt.close()
 
 
-def graficar_3d():
+def graficar_3d(posiciones):
+    # Figura 1: trayectoria de 10.000 pasos
     lista_x, lista_y, lista_z = caminata.trayectoria(3, SEMILLA_BASE, 10000)
     figura = plt.figure(figsize=(8, 7))
     eje = figura.add_subplot(projection="3d")
@@ -165,6 +166,34 @@ def graficar_3d():
     eje.set_zlabel("z")
     eje.legend()
     plt.savefig(CARPETA_RESULTADOS / "trayectoria_3d.png", dpi=150, bbox_inches="tight")
+    plt.close()
+
+    # Figura 2: posiciones finales en 3D y sus proyecciones ortogonales (xy, xz, yz)
+    xs = [p[0] for p in posiciones]
+    ys = [p[1] for p in posiciones]
+    zs = [p[2] for p in posiciones]
+    figura = plt.figure(figsize=(11, 10))
+    eje = figura.add_subplot(2, 2, 1, projection="3d")
+    eje.scatter(xs, ys, zs, s=15)
+    eje.scatter([0], [0], [0], color="green", s=60, label="Origen")
+    eje.set_title("Scatter 3D")
+    eje.set_xlabel("x")
+    eje.set_ylabel("y")
+    eje.set_zlabel("z")
+    eje.legend()
+    # En las proyecciones se pierde un eje, pero se leen las distancias sin la distorsión de la perspectiva
+    for posicion, (horizontal, vertical, nombre_h, nombre_v) in enumerate(
+        [(xs, ys, "x", "y"), (xs, zs, "x", "z"), (ys, zs, "y", "z")], start=2
+    ):
+        eje = figura.add_subplot(2, 2, posicion)
+        eje.scatter(horizontal, vertical, s=15)
+        eje.scatter([0], [0], color="green", s=40)
+        eje.set_title(f"Proyección {nombre_h}{nombre_v}")
+        eje.set_xlabel(nombre_h)
+        eje.set_ylabel(nombre_v)
+        eje.set_aspect("equal", adjustable="datalim")
+    figura.suptitle(f"Posiciones finales 3D ({REPLICAS} réplicas)")
+    plt.savefig(CARPETA_RESULTADOS / "posiciones_finales_3d.png", dpi=150, bbox_inches="tight")
     plt.close()
 
 
@@ -199,7 +228,7 @@ def main():
         elif dimension == 2:
             graficar_2d(posiciones)
         else:
-            graficar_3d()
+            graficar_3d(posiciones)
 
     print("\nDimensión | Tiempo (s) | Memoria pico (MB) | P(retorno en 1000 pasos)")
     for dimension, tiempo, memoria, prob in tabla:
